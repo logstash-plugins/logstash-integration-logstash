@@ -1,0 +1,5 @@
+scratch/*
+spec/fixtures/certs/generated
+Gemfile.lock
+.ruby-version
+.ci
