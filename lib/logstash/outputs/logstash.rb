@@ -47,7 +47,7 @@ class LogStash::Outputs::Logstash < LogStash::Inputs::Base
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
     end
 
-    if @ssl_certificate_authorities&.then {|ca| ca.size > 1 }
+    if @ssl_certificate_authorities && @ssl_certificate_authorities.size > 1
       fail LogStash::ConfigurationError, 'The `logstash` output supports at most one `ssl_certificate_authorities` path'
     end
 
