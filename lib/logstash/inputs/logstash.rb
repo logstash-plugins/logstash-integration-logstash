@@ -10,7 +10,7 @@ require 'logstash/codecs/json_lines'
 class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
 
-  config_name "logstash"
+  config_name "logstash_input"
 
   config :host,     :validate => :string,   :default => "0.0.0.0"
   config :port,     :validate => :number,   :required => true
@@ -102,6 +102,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || report_invalid_config!('`password` is REQUIRED when `username` is provided')
+        report_invalid_config!("Empty `username` or `password` is not allowed") if @username.empty? || @password.value.empty?
         logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
       elsif @password
         report_invalid_config!('`password` not allowed unless `username` is configured')

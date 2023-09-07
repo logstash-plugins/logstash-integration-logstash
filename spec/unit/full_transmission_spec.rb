@@ -1,27 +1,13 @@
 # encoding: utf-8
 
-require "logstash/devutils/rspec/spec_helper"
+require_relative "../spec_helper"
 require "logstash/devutils/rspec/shared_examples"
-
 require "logstash/inputs/logstash"
 require "logstash/outputs/logstash"
-
-require 'rspec/collection_matchers'
-
-require 'random-port'
+require "rspec/collection_matchers"
+require "random-port"
 
 describe 'Logstash Output -> Input complete transmission' do
-
-  def cert_fixture(name)
-    File.expand_path("fixtures/certs/generated/#{name}", __dir__)
-  end
-
-  def cert_fixture!(name)
-    cert_fixture(name).tap do |filename|
-      fail "MISSING: #{filename}" unless File.file?(filename)
-      fail "UNREADABLE: #{filename}" unless File.readable?(filename)
-    end
-  end
 
   let(:port) { @available_port }
 
@@ -184,8 +170,6 @@ describe 'Logstash Output -> Input complete transmission' do
       include_context 'transmission'
       include_examples "connection failure"
     end
-
-
 
     context 'output presents untrusted certificate' do
       let(:output_plugin) {
