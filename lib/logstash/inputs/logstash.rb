@@ -32,6 +32,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
 
   # SSL:TRUST:CONFIG
   config :ssl_client_authentication,   :validate => %w(none optional required), :default => 'none'
+  config :ssl_verification_mode,       :validate => %w(certificate),            :default => 'certificate'
 
   # SSL:TRUST:SOURCE ca file
   config :ssl_certificate_authorities, :validate => :path, :list => true
