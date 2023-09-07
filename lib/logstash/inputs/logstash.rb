@@ -32,7 +32,6 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
 
   # SSL:TRUST:CONFIG
   config :ssl_client_authentication,   :validate => %w(none optional required), :default => 'none'
-  config :ssl_verification_mode,       :validate => %w(certificate),            :default => 'certificate'
 
   # SSL:TRUST:SOURCE ca file
   config :ssl_certificate_authorities, :validate => :path, :list => true
@@ -126,18 +125,13 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   end
 
   def ssl_identity_options
-    # identity_options = {
-    #   'ssl_certificate' => @ssl_certificate || report_invalid_config!('`ssl_certificate` is REQUIRED when `ssl => true`'),
-    #   'ssl_key'         => @ssl_key         || report_invalid_config!('`ssl_key` is REQUIRED when `ssl => true`')
-    # }
-    # identity_options['ssl_key_passphrase'] = @ssl_key_passphrase if @original_params.include?('ssl_key_passphrase')
-
     {}.tap do |identity_options|
       if @ssl_certificate && @ssl_keystore_path
         report_invalid_config!('SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
       elsif @ssl_certificate
         identity_options['ssl_certificate'] = @ssl_certificate
-        identity_options['ssl_key'] = @ssl_key
+        report_invalid_config!('`ssl_key_passphrase` is not allowed unless `ssl_key` is configured') if @ssl_key.nil? && @ssl_key_passphrase
+        identity_options['ssl_key'] = @ssl_key unless @ssl_key.nil?
         identity_options['ssl_key_passphrase'] = @ssl_key_passphrase unless @ssl_key_passphrase.nil?
       elsif @ssl_key
         report_invalid_config!('`ssl_key` is not allowed unless `ssl_certificate` is configured')
@@ -167,7 +161,6 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       end
     end
   end
-
 
   def inner_json_lines_codec_options
     @_inner_json_lines_codec_options ||= {

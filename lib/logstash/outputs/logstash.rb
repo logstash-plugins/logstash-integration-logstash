@@ -1,11 +1,11 @@
 # encoding: utf-8
 
-require 'logstash/inputs/base'
+require 'logstash/outputs/base'
 require 'logstash/namespace'
 
 require "logstash/plugin_mixins/plugin_factory_support"
 
-class LogStash::Outputs::Logstash < LogStash::Inputs::Base
+class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
 
   config_name "logstash"
@@ -120,14 +120,14 @@ class LogStash::Outputs::Logstash < LogStash::Inputs::Base
       fail(LogStash::ConfigurationError, 'SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
     elsif @ssl_certificate
       return {
-        'client_cert' => @ssl_certificate,
-        'client_key'  => @ssl_key || fail("`ssl_key` is REQUIRED when `ssl_certificate` is provided"),
+        'ssl_certificate' => @ssl_certificate,
+        'ssl_key'  => @ssl_key || fail("`ssl_key` is REQUIRED when `ssl_certificate` is provided"),
       }
     elsif @ssl_keystore_path
       return {
-        'keystore' => @ssl_keystore_path,
-        'keystore_type' => keystore_type(@ssl_keystore_path),
-        'keystore_password' => @ssl_keystore_password || fail("`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
+        'ssl_keystore_path' => @ssl_keystore_path,
+        'ssl_keystore_type' => keystore_type(@ssl_keystore_path),
+        'ssl_keystore_password' => @ssl_keystore_password || fail("`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
       }
     else
       return {}
@@ -143,13 +143,13 @@ class LogStash::Outputs::Logstash < LogStash::Inputs::Base
       elsif @ssl_certificate_authorities&.any?
         fail(LogStash::ConfigurationError, 'SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
 
-        trust_options['cacert'] = @ssl_certificate_authorities.first
+        trust_options['ssl_certificate_authorities'] = @ssl_certificate_authorities.first
       elsif @ssl_truststore_path
         fail(LogStash::ConfigurationError, 'SSL Truststore cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
 
-        trust_options['truststore'] = @ssl_truststore_path
-        trust_options['truststore_type'] = keystore_type(@ssl_truststore_path)
-        trust_options['truststore_password'] = @ssl_truststore_password || fail("`truststore_password` is REQUIRED when `ssl_truststore_path` is provided")
+        trust_options['ssl_truststore_path'] = @ssl_truststore_path
+        trust_options['ssl_truststore_path'] = keystore_type(@ssl_truststore_path)
+        trust_options['ssl_truststore_password'] = @ssl_truststore_password || fail("`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided")
       end
     end
   end

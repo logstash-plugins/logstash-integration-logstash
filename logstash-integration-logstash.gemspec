@@ -1,4 +1,4 @@
-INTEGRATION_LOGSTASH_VERSION = File.read(File.expand_path(File.join(File.dirname(__FILE__), "VERSION"))).strip unless defined?(INTEGRATION_AWS_VERSION)
+INTEGRATION_LOGSTASH_VERSION = File.read(File.expand_path(File.join(File.dirname(__FILE__), "VERSION"))).strip unless defined?(INTEGRATION_LOGSTASH_VERSION)
 
 Gem::Specification.new do |s|
   s.name            = "logstash-integration-logstash"
@@ -8,7 +8,7 @@ Gem::Specification.new do |s|
   s.description     = "This gem is a Logstash plugin required to be installed on top of the Logstash core pipeline using $LS_HOME/bin/logstash-plugin install gemname. This gem is not a stand-alone program"
   s.authors         = ["Elastic"]
   s.email           = "info@elastic.co"
-  s.homepage        = "http://www.elastic.co/guide/en/logstash/current/index.html"
+  s.homepage        = "https://www.elastic.co/logstash"
   s.platform        = "java"
   s.metadata        = {
     "logstash_plugin" => "true",
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
     ).join(",")
   }
 
-  s.require_paths   = ["lib", "vendor/jar-dependencies"]
+  s.require_paths   = %w[lib vendor/jar-dependencies]
   s.files           = Dir["lib/**/*","spec/**/*","*.gemspec","*.md","CONTRIBUTORS","Gemfile","LICENSE","NOTICE.TXT", "VERSION", "docs/**/*", "vendor/jar-dependencies/**/*.jar", "vendor/jar-dependencies/**/*.rb"]
   s.test_files      = s.files.grep(%r{^(test|spec|features)/})
 
@@ -27,8 +27,8 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-mixin-plugin_factory_support", "~> 1.0"
   s.add_runtime_dependency "logstash-codec-json_lines", "~> 3.1"
 
-  s.add_runtime_dependency "logstash-input-http"
-  s.add_runtime_dependency "logstash-output-http"
+  s.add_runtime_dependency "logstash-input-http", ">= 3.7.2"  # some params renamed, such as `cacert` to `ssl_certificate_authorities`, do not exist in older versions
+  s.add_runtime_dependency "logstash-output-http", ">= 5.6.0"
 
   s.add_development_dependency "logstash-devutils"
   s.add_development_dependency "rspec-collection_matchers"

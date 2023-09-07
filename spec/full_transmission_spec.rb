@@ -37,7 +37,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # requires: input_plugin (a Logstash input plugin)
   # optional: concurrency (default: 1)
   # optional: batch_size (default: 125)
-  # provides: output_events (an arrray of Events)
+  # provides: output_events (an array of Events)
   shared_context 'transmission' do
     let(:concurrency) { defined?(super) ? super() : 8 }
     let(:batch_size) { defined?(super) ? super() : 125 }

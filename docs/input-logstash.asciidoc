@@ -106,29 +106,26 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 |=======================================================================
 |Setting                            |Input type        |Required
 | <<plugins-{type}s-{plugin}-host>> |<<string,string>> |No
-| <<plugins-{type}s-{plugin}-port>> |<<number,number>> |Yes
-| <<plugins-{type}s-{plugin}-username>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-password>> |<<password,password>>|No
-| <<plugins-{type}s-{plugin}-ssl_enabled>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-port>> |<<number,number>> |Yes
 | <<plugins-{type}s-{plugin}-ssl_certificate>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_certificate_authorities>> |<<array,array>>|No
+| <<plugins-{type}s-{plugin}-ssl_client_authentication>> | <<string,string>>, one of `["none", "optional", "required"]`|No
+| <<plugins-{type}s-{plugin}-ssl_cipher_suites>> |<<array,array>>|No
+| <<plugins-{type}s-{plugin}-ssl_enabled>> |<<boolean,boolean>>|No
+| <<plugins-{type}s-{plugin}-ssl_handshake_timeout>>|<<number,number>>|No
 | <<plugins-{type}s-{plugin}-ssl_key>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_password>> | <<password,password>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_path>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_key_passphrase>> | <<password,password>>|No
-| <<plugins-{type}s-{plugin}-ssl_verification_mode>> | <<string,string>>, one of `["certificate"]`|No
-| <<plugins-{type}s-{plugin}-ssl_client_authentication>> | <<string,string>>, one of `["none", "optional", "required"]`|No
+| <<plugins-{type}s-{plugin}-ssl_supported_protocols>> |<<string,string>>|No
+| <<plugins-{type}s-{plugin}-username>> |<<string,string>>|No
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
 input plugins.
 
 &nbsp;
-
-// Variables for re-use in per-option docs
-:prohibit-ssl-disabled-effective: Cannot be combined with configurations that disable SSL
-:prohibit-ssl-disabled-explicit: pass:n[Cannot be combined with <<plugins-{type}s-{plugin}-ssl_enabled, `+ssl_enabled => false+`>>.]
-:prohibit-ssl-client-authentication-none: pass:n[Cannot be combined with <<plugins-{type}s-{plugin}-ssl_client_authentication, `+ssl_client_authentication => none+`>>.]
 
 [id="plugins-{type}s-{plugin}-host"]
 ===== `host`
@@ -139,14 +136,6 @@ input plugins.
 Specify which interface to listen on by providing its ip address.
 By default, this input listens on all available interfaces.
 
-[id="plugins-{type}s-{plugin}-port"]
-===== `port`
-
-* Value type is a <<number,number>> port
-* There is no default value
-
-Specify which port to listen on.
-
 [id="plugins-{type}s-{plugin}-password"]
 ===== `password`
 
@@ -156,26 +145,13 @@ Specify which port to listen on.
 Password for password-based authentication.
 Requires <<plugins-{type}s-{plugin}-username>>.
 
-[id="plugins-{type}s-{plugin}-username"]
-===== `username`
+[id="plugins-{type}s-{plugin}-port"]
+===== `port`
 
-* Value type is <<string,string>>
-* There is no default value for this setting.
+* Value type is a <<number,number>> port
+* There is no default value
 
-Username for password-based authentication.
-When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream <<plugins-outputs-logstash>> must also be configured with a matching `username`/`password` pair.
-
-NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
-
-[id="plugins-{type}s-{plugin}-ssl_enabled"]
-===== `ssl_enabled`
-
-* Value type is <<boolean,boolean>>
-* Default value is `true`
-
-SSL is enabled by default, which requires configuring this plugin to present its <<plugins-{type}s-{plugin}-config-ssl-identity, identity>>.
-
-You can disable SSL with `+ssl_enabled => false+`.
+Specify which port to listen on.
 
 [id="plugins-{type}s-{plugin}-ssl_certificate"]
 ===== `ssl_certificate`
@@ -183,7 +159,6 @@ You can disable SSL with `+ssl_enabled => false+`.
 * Value type is <<path,path>>
 * There is no default value for this setting.
 * When present, <<plugins-{type}s-{plugin}-ssl_key>> and <<plugins-{type}s-{plugin}-ssl_key_passphrase>> are also required.
-* {prohibit-ssl-disabled-effective}
 
 Path to a PEM-encoded certificate or certificate chain with which to identify this plugin to connecting clients.
 The certificate _SHOULD_ include identity claims about the ip address or hostname that clients use to establish a connection.
@@ -193,94 +168,10 @@ The certificate _SHOULD_ include identity claims about the ip address or hostnam
 
 * Value type is a list of <<path,path>>s
 * There is no default value for this setting.
-* {prohibit-ssl-disabled-effective}
-* {prohibit-ssl-client-authentication-none}
 
+Cannot be used with `+ssl_client_authentication => "none"+`.
 One or more PEM-encoded files defining certificate authorities for use in client authentication.
-
 This setting can be used to _override_ the system trust store for verifying the SSL certificate presented by clients.
-
-[id="plugins-{type}s-{plugin}-ssl_key"]
-===== `ssl_key`
-
-* Value type is <<path,path>>
-* There is no default value for this setting.
-* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_certificate>>
-* {prohibit-ssl-disabled-effective}
-
-A path to a PEM-encoded _encrypted_ PKCS8 SSL certificate key.
-
-[id="plugins-{type}s-{plugin}-ssl_keystore_password"]
-===== `ssl_keystore_password`
-
-* Value type is <<password,password>>
-* There is no default value for this setting.
-* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_keystore_path>>
-* {prohibit-ssl-disabled-effective}
-
-Password for the <<plugins-{type}s-{plugin}-ssl_keystore_path>>
-
-[id="plugins-{type}s-{plugin}-ssl_keystore_path"]
-===== `ssl_keystore_path`
-
-* Value type is <<path,path>>
-* There is no default value for this setting.
-* When present, <<plugins-{type}s-{plugin}-ssl_keystore_password>> is also required.
-* {prohibit-ssl-disabled-effective}
-
-A path to a JKS- or PKCS12-formatted keystore with which to identify this plugin to {es}.
-
-[id="plugins-{type}s-{plugin}-ssl_key_passphrase"]
-===== `ssl_key_passphrase`
-
-* Value type is <<password,password>>
-* There is no default value for this setting.
-* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_certificate>>
-* {prohibit-ssl-disabled-effective}
-
-A password or passphrase of the <<plugins-{type}s-{plugin}-ssl_key>>.
-
-[id="plugins-{type}s-{plugin}-ssl_truststore_path"]
-===== `ssl_truststore_path`
-
-* Value type is <<path,path>>
-* There is no default value for this setting.
-* When present, <<plugins-{type}s-{plugin}-ssl_truststore_password>> is required.
-* {prohibit-ssl-disabled-effective}
-* {prohibit-ssl-verify-none}
-
-A path to JKS- or PKCS12-formatted keystore where trusted certificates are located.
-
-This setting can be used to _override_ the system trust store for verifying the SSL certificate presented by {es}.
-
-[id="plugins-{type}s-{plugin}-ssl_truststore_password"]
-===== `ssl_truststore_password`
-
-* Value type is <<password,password>>
-* There is no default value for this setting.
-* Required when connection trust is configured with <<plugins-{type}s-{plugin}-ssl_truststore_path>>
-* {prohibit-ssl-disabled-effective}
-
-Password for the <<plugins-{type}s-{plugin}-ssl_truststore_path>>.
-
-[id="plugins-{type}s-{plugin}-ssl_verification_mode"]
-===== `ssl_verification_mode`
-
-* Value type is <<string,string>>
-* There is only one currently-supported mode:
-** `certificate`: verifies that a certificate provided by the client is signed by a trusted authority (CA), is within its valid date range, and that the client has possession of the associated key, but does _not_ perform hostname validation.
-// NOTE: `ssl_verification_mode => full` is pending upstream support, but when it arrives it will look like:
-////
-** `full`: fully validates the certificate as in `certificate` mode, and also validates that the client's outbound IP address is represented in the certificate's identity claims for `subject` and/or `subjectAltName`.
-////
-* The default value is `certificate`.
-* {prohibit-ssl-disabled-effective}
-* {prohibit-ssl-client-authentication-none}
-
-When <<plugins-{type}s-{plugin}-ssl_client_authentication>> causes a client to present a certificate, this setting controls how that certificate is verified.
-
-NOTE: Client identity is not typically validated using SSL because the receiving server only has access to the client's outbound-ip, which is not always constant and is frequently not represented in the certificate's subject or subjectAltNames extensions.
-For more information, see https://www.rfc-editor.org/rfc/rfc2818#section-3.1[RFC2818 § 3.2 (HTTP over TLS -- Client Identity)]
 
 [id="plugins-{type}s-{plugin}-ssl_client_authentication"]
 ===== `ssl_client_authentication`
@@ -291,9 +182,102 @@ For more information, see https://www.rfc-editor.org/rfc/rfc2818#section-3.1[RFC
 ** `required`: require a valid certificate from the client that is signed by a trusted certificate authority
 * Default value is `"none"`
 
-By default the server doesn't do any client authentication.
+By default, the server doesn't proceed client authentication.
 This means that connections from clients are _private_ when SSL is enabled, but that this input will allow SSL connections from _any_ client.
 If you wish to configure this plugin to reject connections from untrusted hosts, you will need to configure this plugin to authenticate clients, and may also need to configure its <<plugins-{type}s-{plugin}-config-ssl-trust, source of trust>>.
+
+[id="plugins-{type}s-{plugin}-ssl_cipher_suites"]
+===== `ssl_cipher_suites`
+
+* Value type is <<array,array>>
+* Default value is `['TLS_AES_256_GCM_SHA384', 'TLS_AES_128_GCM_SHA256', 'TLS_CHACHA20_POLY1305_SHA256', 'TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384', 'TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384', 'TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256', 'TLS_ECDHE_RSA_WITH_CHACHA20_POLY1305_SHA256', 'TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256', 'TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256', 'TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA384', 'TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256', 'TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256']`
+
+The list of cipher suites to use, listed by priorities.
+This default list applies for OpenJDK 11.0.14 and higher.
+For older JDK versions, the default list includes only suites supported by that version.
+For example, the ChaCha20 family of ciphers is not supported in older versions.
+
+[id="plugins-{type}s-{plugin}-ssl_enabled"]
+===== `ssl_enabled`
+
+* Value type is <<boolean,boolean>>
+* Default value is `true`
+
+SSL is enabled by default, which requires configuring this plugin to present its <<plugins-{type}s-{plugin}-config-ssl-identity, identity>>.
+
+You can disable SSL with `+ssl_enabled => false+`. When disabled, setting any `ssl_*` configuration causes configuration failure.
+
+[id="plugins-{type}s-{plugin}-ssl_handshake_timeout"]
+===== `ssl_handshake_timeout`
+
+* Value type is <<number,number>>
+* Default value is `10000`
+
+Time in milliseconds for SSL handshake timeout
+
+[id="plugins-{type}s-{plugin}-ssl_key"]
+===== `ssl_key`
+
+* Value type is <<path,path>>
+* There is no default value for this setting.
+* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_certificate>>
+
+A path to a PEM-encoded _encrypted_ PKCS8 SSL certificate key.
+
+[id="plugins-{type}s-{plugin}-ssl_keystore_password"]
+===== `ssl_keystore_password`
+
+* Value type is <<password,password>>
+* There is no default value for this setting.
+* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_keystore_path>>
+
+Password for the <<plugins-{type}s-{plugin}-ssl_keystore_path>>
+
+[id="plugins-{type}s-{plugin}-ssl_keystore_path"]
+===== `ssl_keystore_path`
+
+* Value type is <<path,path>>
+* There is no default value for this setting.
+* When present, <<plugins-{type}s-{plugin}-ssl_keystore_password>> is also required.
+
+A path to a JKS- or PKCS12-formatted keystore with which to identify this plugin to {es}.
+
+[id="plugins-{type}s-{plugin}-ssl_key_passphrase"]
+===== `ssl_key_passphrase`
+
+* Value type is <<password,password>>
+* There is no default value for this setting.
+* Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_certificate>>
+
+A password or passphrase of the <<plugins-{type}s-{plugin}-ssl_key>>.
+
+[id="plugins-{type}s-{plugin}-username"]
+===== `username`
+
+* Value type is <<string,string>>
+* There is no default value for this setting.
+
+Username for HTTP Basic Authentication.
+When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream <<plugins-outputs-logstash>> must also be configured with a matching `username`/`password` pair.
+
+NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
+
+[id="plugins-{type}s-{plugin}-ssl_supported_protocols"]
+===== `ssl_supported_protocols`
+
+* Value type is <<string,string>>
+* Allowed values are: `'TLSv1.1'`, `'TLSv1.2'`, `'TLSv1.3'`
+* Default depends on the JDK being used. With up-to-date Logstash, the default is `['TLSv1.2', 'TLSv1.3']`.
+`'TLSv1.1'` is not considered secure and is only provided for legacy applications.
+
+List of allowed SSL/TLS versions to use when establishing a connection to the HTTP endpoint.
+
+For Java 8 `'TLSv1.3'` is supported  only since **8u262** (AdoptOpenJDK), but requires that you set the
+`LS_JAVA_OPTS="-Djdk.tls.client.protocols=TLSv1.3"` system property in Logstash.
+
+NOTE: If you configure the plugin to use `'TLSv1.1'` on any recent JVM, such as the one packaged with Logstash,
+the protocol is disabled by default and needs to be enabled manually by changing `jdk.tls.disabledAlgorithms` in
+the *$JDK_HOME/conf/security/java.security* configuration file. That is, `TLSv1.1` needs to be removed from the list.
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
