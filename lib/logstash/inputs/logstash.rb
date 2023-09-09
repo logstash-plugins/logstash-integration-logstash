@@ -32,7 +32,6 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
 
   # SSL:TRUST:CONFIG
   config :ssl_client_authentication,   :validate => %w(none optional required), :default => 'none'
-  config :ssl_verification_mode,       :validate => %w(certificate),            :default => 'certificate'
 
   # SSL:TRUST:SOURCE ca file
   config :ssl_certificate_authorities, :validate => :path, :list => true
@@ -133,6 +132,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       elsif @ssl_certificate
         identity_options['ssl_certificate'] = @ssl_certificate
         report_invalid_config!('`ssl_key_passphrase` is not allowed unless `ssl_key` is configured') if @ssl_key.nil? && @ssl_key_passphrase
+        report_invalid_config!('Empty `ssl_key_passphrase` is not allowed') if !@ssl_key.nil? && @ssl_key_passphrase && @ssl_key_passphrase.value.empty?
         identity_options['ssl_key'] = @ssl_key unless @ssl_key.nil?
         identity_options['ssl_key_passphrase'] = @ssl_key_passphrase unless @ssl_key_passphrase.nil?
       elsif @ssl_key
@@ -141,7 +141,8 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
         report_invalid_config!('`ssl_key_passphrase` is not allowed unless `ssl_key` is configured')
       elsif @ssl_keystore_path
         identity_options['ssl_keystore_path'] = @ssl_keystore_path
-        identity_options['ssl_keystore_password'] = @ssl_keystore_password || report_invalid_config!('`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured')
+        report_invalid_config!('Non-empty `ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured') if @ssl_keystore_password.nil? || @ssl_keystore_password.value.empty?
+        identity_options['ssl_keystore_password'] = @ssl_keystore_password
       elsif @ssl_keystore_password
         report_invalid_config!('`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured')
       else
