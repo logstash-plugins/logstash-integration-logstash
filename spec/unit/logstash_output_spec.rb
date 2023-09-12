@@ -15,7 +15,7 @@ describe LogStash::Outputs::Logstash do
 
     it { is_expected.to be_a_kind_of Class }
     it { is_expected.to be <= LogStash::Outputs::Base }
-    it { is_expected.to have_attributes(:config_name => "logstash_output") }
+    it { is_expected.to have_attributes(:config_name => "logstash") }
   end
 
   describe "a plugin instance with minimal config" do
@@ -47,24 +47,6 @@ describe LogStash::Outputs::Logstash do
 
         it "requires `username`" do
           expected_message = "`password` not allowed unless `username` is configured"
-          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-        end
-      end
-
-      context "when `username` is an empty" do
-        let(:config) { super().merge("username" => "", "password" => "p$d") }
-
-        it "requires non-empty `username`" do
-          expected_message = "Empty `username` or `password` is not allowed"
-          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-        end
-      end
-
-      context "when `password` is an empty" do
-        let(:config) { super().merge("username" => "test_user", "password" => "") }
-
-        it "requires non-empty `username`" do
-          expected_message = "Empty `username` or `password` is not allowed"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end

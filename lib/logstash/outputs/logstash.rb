@@ -8,7 +8,7 @@ require "logstash/plugin_mixins/plugin_factory_support"
 class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
 
-  config_name "logstash_output"
+  config_name "logstash"
 
   config :host,     :validate => :string,   :required => true
   config :port,     :validate => :number,   :required => true
@@ -98,7 +98,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || fail(LogStash::ConfigurationError, '`password` is REQUIRED when `username` is provided')
-        fail(LogStash::ConfigurationError, "Empty `username` or `password` is not allowed") if @username.empty? || @password.value.empty?
         logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
       elsif @password
         fail(LogStash::ConfigurationError, '`password` not allowed unless `username` is configured')
