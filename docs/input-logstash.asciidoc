@@ -236,17 +236,6 @@ A path to a JKS- or PKCS12-formatted keystore with which to identify this plugin
 
 A password or passphrase of the <<plugins-{type}s-{plugin}-ssl_key>>.
 
-[id="plugins-{type}s-{plugin}-username"]
-===== `username`
-
-* Value type is <<string,string>>
-* There is no default value for this setting.
-
-Username for password-based authentication.
-When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream <<plugins-outputs-logstash>> must also be configured with a matching `username`/`password` pair.
-
-NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
-
 [id="plugins-{type}s-{plugin}-ssl_verification_mode"]
 ===== `ssl_verification_mode`
 
@@ -260,6 +249,22 @@ NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 * The default value is `certificate`.
 * Cannot be combined with configurations that disable SSL.
 * Cannot be combined with <<plugins-{type}s-{plugin}-ssl_client_authentication, `+ssl_client_authentication => none+`>>.
+
+When <<plugins-{type}s-{plugin}-ssl_client_authentication>> causes a client to present a certificate, this setting controls how that certificate is verified.
+
+NOTE: Client identity is not typically validated using SSL because the receiving server only has access to the client's outbound-ip, which is not always constant and is frequently not represented in the certificate's subject or subjectAltNames extensions.
+For more information, see https://www.rfc-editor.org/rfc/rfc2818#section-3.1[RFC2818 § 3.2 (HTTP over TLS -- Client Identity)]
+
+[id="plugins-{type}s-{plugin}-username"]
+===== `username`
+
+* Value type is <<string,string>>
+* There is no default value for this setting.
+
+Username for password-based authentication.
+When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream <<plugins-outputs-logstash>> must also be configured with a matching `username`/`password` pair.
+
+NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 
 [id="plugins-{type}s-{plugin}-common-options"]
 include::{include_path}/{type}.asciidoc[]
