@@ -182,7 +182,7 @@ This setting can be used to _override_ the system trust store for verifying the 
 ** `required`: require a valid certificate from the client that is signed by a trusted certificate authority
 * Default value is `"none"`
 
-By default, the server doesn't proceed client authentication.
+By default the server doesn't do any client authentication.
 This means that connections from clients are _private_ when SSL is enabled, but that this input will allow SSL connections from _any_ client.
 If you wish to configure this plugin to reject connections from untrusted hosts, you will need to configure this plugin to authenticate clients, and may also need to configure its <<plugins-{type}s-{plugin}-config-ssl-trust, source of trust>>.
 

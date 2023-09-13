@@ -102,7 +102,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || report_invalid_config!('`password` is REQUIRED when `username` is provided')
-        logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
+        logger.warn("transmitting credentials over non-secured connection") if @ssl_enabled == false
       elsif @password
         report_invalid_config!('`password` not allowed unless `username` is configured')
       end

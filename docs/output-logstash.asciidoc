@@ -16,7 +16,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}s-{plugin}"]
 
-=== Logstash input plugin
+=== Logstash output plugin
 
 include::{include_path}/plugin_header-integration.asciidoc[]
 
@@ -114,7 +114,6 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-ssl_key>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_path>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_password>> | <<password,password>>|No
-| <<plugins-{type}s-{plugin}-ssl_supported_protocols>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-ssl_truststore_path>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_truststore_password>> | <<password,password>>|No
 | <<plugins-{type}s-{plugin}-ssl_verification_mode>> | <<string,string>>, one of `["full", "none"]`|No
@@ -122,7 +121,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
-input plugins.
+output plugins.
 
 &nbsp;
 
@@ -245,7 +244,7 @@ Password for the <<plugins-{type}s-{plugin}-ssl_truststore_path>>
 ===== `ssl_verification_mode`
 
 * Value type is <<string,string>>
-* There is only one currently-supported mode:
+* The supported modes are:
 ** `full`: verifies that a certificate provided by the client has an identity claim matching <<plugins-{type}s-{plugin}-host>>, is signed by a trusted authority (CA), is within its valid date range, and that the client has possession of the associated key.
 ** `none`: performs no validation of the presented certificate
 
