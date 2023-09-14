@@ -98,8 +98,8 @@ describe LogStash::Outputs::Logstash do
       context "`ssl_keystore_path`" do
         let(:config) { super().merge("ssl_keystore_path" => cert_fixture!('server_from_root.jks')) }
 
-        it "requires non-empty `ssl_keystore_password`" do
-          expected_message = 'Non-empty `ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided'
+        it "requires `ssl_keystore_password`" do
+          expected_message = '`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided'
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -143,7 +143,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_truststore_path" => cert_fixture!('client_self_signed.jks')) }
 
         it "requires truststore password" do
-          expected_message = 'Non-empty `ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided'
+          expected_message = '`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided'
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
 
@@ -152,15 +152,6 @@ describe LogStash::Outputs::Logstash do
 
           it "not allowed" do
             expected_message = 'SSL Truststore cannot be configured when `ssl_verification_mode => none`'
-            expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-          end
-        end
-
-        context "path with empty password" do
-          let(:config) { super().merge("ssl_truststore_password" => "") }
-
-          it "is not allowed" do
-            expected_message = 'Non-empty `ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided'
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
           end
         end

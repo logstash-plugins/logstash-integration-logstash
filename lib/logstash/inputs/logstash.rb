@@ -138,8 +138,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
         report_invalid_config!('`ssl_key_passphrase` is not allowed unless `ssl_key` is configured')
       elsif @ssl_keystore_path
         identity_options['ssl_keystore_path'] = @ssl_keystore_path
-        report_invalid_config!('Non-empty `ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured') if @ssl_keystore_password.nil? || @ssl_keystore_password.value.empty?
-        identity_options['ssl_keystore_password'] = @ssl_keystore_password
+        identity_options['ssl_keystore_password'] = @ssl_keystore_password || report_invalid_config!('`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured')
       elsif @ssl_keystore_password
         report_invalid_config!('`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured')
       else

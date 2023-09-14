@@ -128,11 +128,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     elsif @ssl_key
       fail(LogStash::ConfigurationError, '`ssl_key` is not allowed unless `ssl_certificate` is configured')
     elsif @ssl_keystore_path
-      fail(LogStash::ConfigurationError, "Non-empty `ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided") if @ssl_keystore_password.nil? || @ssl_keystore_password.value.empty?
       return {
         'ssl_keystore_path' => @ssl_keystore_path,
         'ssl_keystore_type' => keystore_type(@ssl_keystore_path),
-        'ssl_keystore_password' => @ssl_keystore_password,
+        'ssl_keystore_password' => @ssl_keystore_password || fail(LogStash::ConfigurationError, "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
       }
     elsif @ssl_keystore_password
       fail(LogStash::ConfigurationError, "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured")
@@ -153,11 +152,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         trust_options['ssl_certificate_authorities'] = @ssl_certificate_authorities.first
       elsif @ssl_truststore_path
         fail(LogStash::ConfigurationError, 'SSL Truststore cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
-        fail(LogStash::ConfigurationError, 'Non-empty `ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided') if @ssl_truststore_password.nil? || @ssl_truststore_password.value.empty?
 
         trust_options['ssl_truststore_path'] = @ssl_truststore_path
         trust_options['ssl_truststore_type'] = keystore_type(@ssl_truststore_path)
-        trust_options['ssl_truststore_password'] = @ssl_truststore_password
+        trust_options['ssl_truststore_password'] = @ssl_truststore_password || fail(LogStash::ConfigurationError, '`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided')
       elsif @ssl_truststore_password
         fail(LogStash::ConfigurationError, '`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured')
       end

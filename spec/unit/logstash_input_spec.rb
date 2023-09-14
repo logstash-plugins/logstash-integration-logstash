@@ -86,25 +86,12 @@ describe LogStash::Inputs::Logstash do
           end
         end
 
-        context "with `ssl_key_passphrase`" do
+        context "without `ssl_key`" do
           let(:config) { super().merge("ssl_key_passphrase" => "pa$$w0rd") }
 
-          it "requires `ssl_key`" do
-            expected_message = '`ssl_key_passphrase` is not allowed unless `ssl_key` is configured'
+          it "is not allowed" do
+            expected_message = '`ssl_key` is required when `ssl_certificate` is configured'
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-          end
-        end
-
-        context "with `ssl_key`" do
-          let(:config) { super().merge("ssl_key" => cert_fixture!('server_from_root.key.pkcs8.pem')) }
-
-          context "with empty `ssl_key_passphrase`" do
-            let(:config) { super().merge("ssl_key_passphrase" => "") }
-
-            it "is not allowed" do
-              expected_message = 'Empty `ssl_key_passphrase` is not allowed'
-              expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-            end
           end
         end
       end
@@ -130,8 +117,8 @@ describe LogStash::Inputs::Logstash do
       context "`ssl_keystore_path`" do
         let(:config) { super().merge("ssl_keystore_path" => cert_fixture!('server_from_root.jks')) }
 
-        it "requires non-empty `ssl_keystore_password`" do
-          expected_message = 'Non-empty `ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured'
+        it "requires `ssl_keystore_password`" do
+          expected_message = '`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured'
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
