@@ -102,7 +102,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || report_invalid_config!('`password` is REQUIRED when `username` is provided')
-        logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
+        logger.warn("transmitting credentials over non-secured connection") if @ssl_enabled == false
       elsif @password
         report_invalid_config!('`password` not allowed unless `username` is configured')
       end
@@ -126,18 +126,12 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   end
 
   def ssl_identity_options
-    # identity_options = {
-    #   'ssl_certificate' => @ssl_certificate || report_invalid_config!('`ssl_certificate` is REQUIRED when `ssl => true`'),
-    #   'ssl_key'         => @ssl_key         || report_invalid_config!('`ssl_key` is REQUIRED when `ssl => true`')
-    # }
-    # identity_options['ssl_key_passphrase'] = @ssl_key_passphrase if @original_params.include?('ssl_key_passphrase')
-
     {}.tap do |identity_options|
       if @ssl_certificate && @ssl_keystore_path
         report_invalid_config!('SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
       elsif @ssl_certificate
         identity_options['ssl_certificate'] = @ssl_certificate
-        identity_options['ssl_key'] = @ssl_key
+        identity_options['ssl_key'] = @ssl_key || report_invalid_config!('`ssl_key` is required when `ssl_certificate` is configured')
         identity_options['ssl_key_passphrase'] = @ssl_key_passphrase unless @ssl_key_passphrase.nil?
       elsif @ssl_key
         report_invalid_config!('`ssl_key` is not allowed unless `ssl_certificate` is configured')
@@ -167,7 +161,6 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       end
     end
   end
-
 
   def inner_json_lines_codec_options
     @_inner_json_lines_codec_options ||= {

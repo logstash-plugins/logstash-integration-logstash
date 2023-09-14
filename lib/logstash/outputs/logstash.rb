@@ -1,11 +1,11 @@
 # encoding: utf-8
 
-require 'logstash/inputs/base'
+require 'logstash/outputs/base'
 require 'logstash/namespace'
 
 require "logstash/plugin_mixins/plugin_factory_support"
 
-class LogStash::Outputs::Logstash < LogStash::Inputs::Base
+class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
 
   config_name "logstash"
@@ -98,7 +98,9 @@ class LogStash::Outputs::Logstash < LogStash::Inputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || fail(LogStash::ConfigurationError, '`password` is REQUIRED when `username` is provided')
-        logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
+        logger.warn("transmitting credentials over non-secured connection") if @ssl_enabled == false
+      elsif @password
+        fail(LogStash::ConfigurationError, '`password` not allowed unless `username` is configured')
       end
 
       if @ssl_enabled == false

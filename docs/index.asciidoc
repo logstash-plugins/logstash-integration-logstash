@@ -1,4 +1,4 @@
-:plugin: aws
+:plugin: logstash
 :type: integration
 :no_codec:
 
@@ -17,17 +17,14 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 === Logstash Integration Plugin
 
-include::{include_path}/plugin_header.asciidoc[]
-
-:link-logstash-output: pass:n[{logstash-ref}/plugins-outputs-logstash.html[Logstash Output Plugin]]
-:link-logstash-input: pass:n[{logstash-ref}/plugins-inputs-logstash.html[Logstash Input Plugin]]
+// include::{include_path}/plugin_header.asciidoc[]
 
 ==== Description
 
 The Logstash Integration Plugin provides integrated plugins for sending events from one Logstash to another:
 
-* {link-logstash-output}
-* {link-logstash-input}
+* {logstash-ref}/plugins-outputs-logstash.html[Logstash Output Plugin]
+* {logstash-ref}/plugins-inputs-logstash.html[Logstash Input Plugin]
 
 [id="plugins-{type}s-{plugin}-concepts"]
 ===== High-level concepts
