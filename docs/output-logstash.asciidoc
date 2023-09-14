@@ -22,7 +22,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 ==== Description
 
-Send events to a <<plugins-outputs-logstash>> in a pipeline that may be in another process or on another host.
+Send events to a <<plugins-inputs-logstash>> in a pipeline that may be in another process or on another host.
 You must have a TCP route to the port on an interface that the downstream input is bound to.
 
 NOTE: Sending events to _any_ destination other than <<plugins-inputs-logstash>> is neither advised nor supported.
@@ -173,8 +173,7 @@ You can disable SSL with `+ssl_enabled => false+`. When disabled, setting any `s
 * When present, <<plugins-{type}s-{plugin}-ssl_key>> is also required.
 * Cannot be combined with configurations that disable SSL.
 
-Path to a PEM-encoded certificate or certificate chain with which to identify this plugin to connecting clients.
-The certificate _SHOULD_ include identity claims about the ip address or hostname that clients use to establish a connection.
+Path to a PEM-encoded certificate or certificate chain with which to identify this plugin to connecting downstream input.
 
 [id="plugins-{type}s-{plugin}-ssl_certificate_authorities"]
 ===== `ssl_certificate_authorities`
@@ -184,8 +183,8 @@ The certificate _SHOULD_ include identity claims about the ip address or hostnam
 * Cannot be combined with configurations that disable SSL.
 * Cannot be combined with <<plugins-{type}s-{plugin}-ssl_verification_mode, `+ssl_verification_mode => none+`>>.
 
-One or more PEM-encoded files defining certificate authorities for use in client authentication.
-This setting can be used to _override_ the system trust store for verifying the SSL certificate presented by clients.
+One or more PEM-encoded files defining certificate authorities for use in downstream input authentication.
+This setting can be used to _override_ the system trust store for verifying the SSL certificate presented by downstream input.
 
 [id="plugins-{type}s-{plugin}-ssl_key"]
 ===== `ssl_key`
@@ -251,10 +250,7 @@ Password for the <<plugins-{type}s-{plugin}-ssl_truststore_path>>
 * The default value is `full`.
 * Cannot be combined with configurations that disable SSL.
 
-When <<plugins-{type}s-{plugin}-ssl_client_authentication>> causes a client to present a certificate, this setting controls how that certificate is verified.
-
-NOTE: Client identity is not typically validated using SSL because the receiving server only has access to the client's outbound-ip, which is not always constant and is frequently not represented in the certificate's subject or subjectAltNames extensions.
-For more information, see https://www.rfc-editor.org/rfc/rfc2818#section-3.1[RFC2818 § 3.2 (HTTP over TLS -- Client Identity)]
+When communicating over SSL, this setting controls how the downstream input's certificate is verified.
 
 [id="plugins-{type}s-{plugin}-username"]
 ===== `username`
