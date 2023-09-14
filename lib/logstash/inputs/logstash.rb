@@ -10,7 +10,7 @@ require 'logstash/codecs/json_lines'
 class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
 
-  config_name "logstash_input"
+  config_name "logstash"
 
   config :host,     :validate => :string,   :default => "0.0.0.0"
   config :port,     :validate => :number,   :required => true
@@ -101,8 +101,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
       if @username
         http_options['user'] = @username
         http_options['password'] = @password || report_invalid_config!('`password` is REQUIRED when `username` is provided')
-        report_invalid_config!("Empty `username` or `password` is not allowed") if @username.empty? || @password.value.empty?
-        logger.warn("HTTP Basic Auth over non-secured connection") if @ssl_enabled == false
+        logger.warn("transmitting credentials over non-secured connection") if @ssl_enabled == false
       elsif @password
         report_invalid_config!('`password` not allowed unless `username` is configured')
       end
@@ -131,9 +130,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
         report_invalid_config!('SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
       elsif @ssl_certificate
         identity_options['ssl_certificate'] = @ssl_certificate
-        report_invalid_config!('`ssl_key_passphrase` is not allowed unless `ssl_key` is configured') if @ssl_key.nil? && @ssl_key_passphrase
-        report_invalid_config!('Empty `ssl_key_passphrase` is not allowed') if !@ssl_key.nil? && @ssl_key_passphrase && @ssl_key_passphrase.value.empty?
-        identity_options['ssl_key'] = @ssl_key unless @ssl_key.nil?
+        identity_options['ssl_key'] = @ssl_key || report_invalid_config!('`ssl_key` is required when `ssl_certificate` is configured')
         identity_options['ssl_key_passphrase'] = @ssl_key_passphrase unless @ssl_key_passphrase.nil?
       elsif @ssl_key
         report_invalid_config!('`ssl_key` is not allowed unless `ssl_certificate` is configured')

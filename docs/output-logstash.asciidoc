@@ -1,4 +1,4 @@
-:integration: logstash
+// :integration: logstash
 :plugin: logstash
 :type: output
 :no_codec:
@@ -16,9 +16,9 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 [id="plugins-{type}s-{plugin}"]
 
-=== Logstash input plugin
+=== Logstash output plugin
 
-include::{include_path}/plugin_header-integration.asciidoc[]
+// include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
@@ -114,7 +114,6 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 | <<plugins-{type}s-{plugin}-ssl_key>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_path>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_keystore_password>> | <<password,password>>|No
-| <<plugins-{type}s-{plugin}-ssl_supported_protocols>> |<<string,string>>|No
 | <<plugins-{type}s-{plugin}-ssl_truststore_path>> | <<path,path>>|No
 | <<plugins-{type}s-{plugin}-ssl_truststore_password>> | <<password,password>>|No
 | <<plugins-{type}s-{plugin}-ssl_verification_mode>> | <<string,string>>, one of `["full", "none"]`|No
@@ -122,7 +121,7 @@ This plugin supports the following configuration options plus the <<plugins-{typ
 |=======================================================================
 
 Also see <<plugins-{type}s-{plugin}-common-options>> for a list of options supported by all
-input plugins.
+output plugins.
 
 &nbsp;
 
@@ -172,6 +171,7 @@ You can disable SSL with `+ssl_enabled => false+`. When disabled, setting any `s
 * Value type is <<path,path>>
 * There is no default value for this setting.
 * When present, <<plugins-{type}s-{plugin}-ssl_key>> is also required.
+* Cannot be combined with configurations that disable SSL.
 
 Path to a PEM-encoded certificate or certificate chain with which to identify this plugin to connecting clients.
 The certificate _SHOULD_ include identity claims about the ip address or hostname that clients use to establish a connection.
@@ -181,10 +181,11 @@ The certificate _SHOULD_ include identity claims about the ip address or hostnam
 
 * Value type is a <<path,path>>
 * There is no default value for this setting.
+* Cannot be combined with configurations that disable SSL.
+* Cannot be combined with <<plugins-{type}s-{plugin}-ssl_verification_mode, `+ssl_verification_mode => none+`>>.
 
 One or more PEM-encoded files defining certificate authorities for use in client authentication.
 This setting can be used to _override_ the system trust store for verifying the SSL certificate presented by clients.
-Cannot be combined with `+ssl_verification_mode => none+`.
 
 [id="plugins-{type}s-{plugin}-ssl_key"]
 ===== `ssl_key`
@@ -192,6 +193,7 @@ Cannot be combined with `+ssl_verification_mode => none+`.
 * Value type is <<path,path>>
 * There is no default value for this setting.
 * Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_certificate>>
+* Cannot be combined with configurations that disable SSL.
 
 A path to an PEM-encoded _unencrypted_ PKCS8 SSL certificate key.
 
@@ -201,6 +203,7 @@ A path to an PEM-encoded _unencrypted_ PKCS8 SSL certificate key.
 * Value type is <<path,path>>
 * There is no default value for this setting.
 * When present, <<plugins-{type}s-{plugin}-ssl_keystore_password>> is also required.
+* Cannot be combined with configurations that disable SSL.
 
 A path to a JKS- or PKCS12-formatted keystore with which to identify this plugin to the downstream input.
 The provided identity will be used if the downstream input enables <<plugins-{type}s-{plugin}-config-ssl-trust,SSL client authentication>>.
@@ -211,25 +214,9 @@ The provided identity will be used if the downstream input enables <<plugins-{ty
 * Value type is <<password,password>>
 * There is no default value for this setting.
 * Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_keystore_path>>
+* Cannot be combined with configurations that disable SSL.
 
 Password for the <<plugins-{type}s-{plugin}-ssl_keystore_path>>
-
-[id="plugins-{type}s-{plugin}-ssl_supported_protocols"]
-===== `ssl_supported_protocols`
-
-* Value type is <<string,string>>
-* Allowed values are: `'TLSv1.1'`, `'TLSv1.2'`, `'TLSv1.3'`
-* Default depends on the JDK being used. With up-to-date Logstash, the default is `['TLSv1.2', 'TLSv1.3']`.
-`'TLSv1.1'` is not considered secure and is only provided for legacy applications.
-
-List of allowed SSL/TLS versions to use when establishing a connection to the HTTP endpoint.
-
-For Java 8 `'TLSv1.3'` is supported  only since **8u262** (AdoptOpenJDK), but requires that you set the
-`LS_JAVA_OPTS="-Djdk.tls.client.protocols=TLSv1.3"` system property in Logstash.
-
-NOTE: If you configure the plugin to use `'TLSv1.1'` on any recent JVM, such as the one packaged with Logstash,
-the protocol is disabled by default and needs to be enabled manually by changing `jdk.tls.disabledAlgorithms` in
-the *$JDK_HOME/conf/security/java.security* configuration file. That is, `TLSv1.1` needs to be removed from the list.
 
 [id="plugins-{type}s-{plugin}-ssl_truststore_path"]
 ===== `ssl_truststore_path`
@@ -237,7 +224,8 @@ the *$JDK_HOME/conf/security/java.security* configuration file. That is, `TLSv1.
 * Value type is <<path,path>>
 * There is no default value for this setting.
 * When present, <<plugins-{type}s-{plugin}-ssl_truststore_path>> is also required.
-Cannot be combined with `+ssl_verification_mode => none+`.
+* Cannot be combined with configurations that disable SSL.
+* Cannot be combined with <<plugins-{type}s-{plugin}-ssl_verification_mode, `+ssl_verification_mode => none+`>>.
 
 A path to a JKS- or PKCS12-formatted truststore with which to validate the identity claims of the downstream input.
 The provided identity will be used if the downstream input enables <<plugins-{type}s-{plugin}-config-ssl-trust,SSL client authentication>>.
@@ -248,6 +236,7 @@ The provided identity will be used if the downstream input enables <<plugins-{ty
 * Value type is <<password,password>>
 * There is no default value for this setting.
 * Required when connection identity is configured with <<plugins-{type}s-{plugin}-ssl_truststore_path>>
+* Cannot be combined with configurations that disable SSL.
 
 Password for the <<plugins-{type}s-{plugin}-ssl_truststore_path>>
 
@@ -255,11 +244,12 @@ Password for the <<plugins-{type}s-{plugin}-ssl_truststore_path>>
 ===== `ssl_verification_mode`
 
 * Value type is <<string,string>>
-* There is only one currently-supported mode:
+* The supported modes are:
 ** `full`: verifies that a certificate provided by the client has an identity claim matching <<plugins-{type}s-{plugin}-host>>, is signed by a trusted authority (CA), is within its valid date range, and that the client has possession of the associated key.
 ** `none`: performs no validation of the presented certificate
 
 * The default value is `full`.
+* Cannot be combined with configurations that disable SSL.
 
 When <<plugins-{type}s-{plugin}-ssl_client_authentication>> causes a client to present a certificate, this setting controls how that certificate is verified.
 
@@ -280,6 +270,6 @@ When the downstream input plugin is configured with a `username` and `password`,
 NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 
 [id="plugins-{type}s-{plugin}-common-options"]
-include::{include_path}/{type}.asciidoc[]
+// include::{include_path}/{type}.asciidoc[]
 
 :default_codec!:
