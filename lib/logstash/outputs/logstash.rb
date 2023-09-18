@@ -130,7 +130,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     elsif @ssl_keystore_path
       return {
         'ssl_keystore_path' => @ssl_keystore_path,
-        'ssl_keystore_type' => keystore_type(@ssl_keystore_path),
         'ssl_keystore_password' => @ssl_keystore_password || fail(LogStash::ConfigurationError, "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
       }
     elsif @ssl_keystore_password
@@ -154,16 +153,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         fail(LogStash::ConfigurationError, 'SSL Truststore cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
 
         trust_options['ssl_truststore_path'] = @ssl_truststore_path
-        trust_options['ssl_truststore_type'] = keystore_type(@ssl_truststore_path)
         trust_options['ssl_truststore_password'] = @ssl_truststore_password || fail(LogStash::ConfigurationError, '`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided')
       elsif @ssl_truststore_password
         fail(LogStash::ConfigurationError, '`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured')
       end
     end
-  end
-
-  def keystore_type(keystore_path)
-    return 'jks' if keystore_path.downcase.end_with?('.jks')
-    return 'pkcs12'
   end
 end
