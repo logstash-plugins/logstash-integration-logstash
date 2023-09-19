@@ -122,15 +122,18 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       fail(LogStash::ConfigurationError, 'SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
     elsif @ssl_certificate
       return {
-        'client_cert' => @ssl_certificate,
-        'client_key'  => @ssl_key || fail("`ssl_key` is REQUIRED when `ssl_certificate` is provided"),
+        'ssl_certificate' => @ssl_certificate,
+        'ssl_key'  => @ssl_key || fail(LogStash::ConfigurationError, "`ssl_key` is REQUIRED when `ssl_certificate` is provided"),
       }
+    elsif @ssl_key
+      fail(LogStash::ConfigurationError, '`ssl_key` is not allowed unless `ssl_certificate` is configured')
     elsif @ssl_keystore_path
       return {
-        'keystore' => @ssl_keystore_path,
-        'keystore_type' => keystore_type(@ssl_keystore_path),
-        'keystore_password' => @ssl_keystore_password || fail("`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
+        'ssl_keystore_path' => @ssl_keystore_path,
+        'ssl_keystore_password' => @ssl_keystore_password || fail(LogStash::ConfigurationError, "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"),
       }
+    elsif @ssl_keystore_password
+      fail(LogStash::ConfigurationError, "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured")
     else
       return {}
     end
@@ -145,19 +148,15 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       elsif @ssl_certificate_authorities&.any?
         fail(LogStash::ConfigurationError, 'SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
 
-        trust_options['cacert'] = @ssl_certificate_authorities.first
+        trust_options['ssl_certificate_authorities'] = @ssl_certificate_authorities.first
       elsif @ssl_truststore_path
         fail(LogStash::ConfigurationError, 'SSL Truststore cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
 
-        trust_options['truststore'] = @ssl_truststore_path
-        trust_options['truststore_type'] = keystore_type(@ssl_truststore_path)
-        trust_options['truststore_password'] = @ssl_truststore_password || fail("`truststore_password` is REQUIRED when `ssl_truststore_path` is provided")
+        trust_options['ssl_truststore_path'] = @ssl_truststore_path
+        trust_options['ssl_truststore_password'] = @ssl_truststore_password || fail(LogStash::ConfigurationError, '`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided')
+      elsif @ssl_truststore_password
+        fail(LogStash::ConfigurationError, '`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured')
       end
     end
-  end
-
-  def keystore_type(keystore_path)
-    return 'JKS' if keystore_path.downcase.end_with?('.jks')
-    return 'PKCS12'
   end
 end

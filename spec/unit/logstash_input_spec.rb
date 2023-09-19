@@ -30,7 +30,7 @@ describe LogStash::Inputs::Logstash do
 
     let(:registered_plugin) { plugin.tap(&:register) }
 
-    describe "username and password auth" do
+    context "username and password auth" do
       let(:config) { super().merge("host" => "my-ls-upstream.com", "ssl_enabled" => false) }
 
       context "with `username`" do
@@ -52,7 +52,7 @@ describe LogStash::Inputs::Logstash do
       end
     end
 
-    context "with SSL disabled" do
+    context "SSL disabled" do
       let(:config) { super().merge("ssl_enabled" => false) }
 
       context "with SSL related configs" do
@@ -65,6 +65,87 @@ describe LogStash::Inputs::Logstash do
       end
 
     end
-  end
 
+    context "self identity" do
+      let(:config) { super().merge("ssl_enabled" => true) }
+
+      it "requires SSL identity" do
+        expected_message = 'SSL identity MUST be configured with either `ssl_certificate`/`ssl_key` or `ssl_keystore_*`'
+        expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+      end
+
+      context "SSL certificate" do
+        let(:config) { super().merge("ssl_certificate" => cert_fixture!('server_from_root.pem')) }
+
+        context "with keystore" do
+          let(:config) { super().merge("ssl_keystore_path" => cert_fixture!('client_from_root.jks')) }
+
+          it "cannot be used together" do
+            expected_message = 'SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both'
+            expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+          end
+        end
+
+        context "without `ssl_key`" do
+          let(:config) { super().merge("ssl_key_passphrase" => "pa$$w0rd") }
+
+          it "is not allowed" do
+            expected_message = '`ssl_key` is required when `ssl_certificate` is configured'
+            expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+          end
+        end
+      end
+
+      context "`ssl_key`" do
+        let(:config) { super().merge("ssl_key" => cert_fixture!('server_from_root.key.pkcs8.pem')) }
+
+        it "requires SSL certificate" do
+          expected_message = '`ssl_key` is not allowed unless `ssl_certificate` is configured'
+          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+        end
+      end
+
+      context "`ssl_key_passphrase`" do
+        let(:config) { super().merge("ssl_key_passphrase" => "pa$$w0rd") }
+
+        it "requires SSL key" do
+          expected_message = '`ssl_key_passphrase` is not allowed unless `ssl_key` is configured'
+          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+        end
+      end
+
+      context "`ssl_keystore_path`" do
+        let(:config) { super().merge("ssl_keystore_path" => cert_fixture!('server_from_root.jks')) }
+
+        it "requires `ssl_keystore_password`" do
+          expected_message = '`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is configured'
+          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+        end
+      end
+
+      context "`ssl_keystore_password`" do
+        let(:config) { super().merge("ssl_keystore_password" => "pa$$w0rd") }
+
+        it "requires `ssl_keystore_path`" do
+          expected_message = '`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured'
+          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+        end
+      end
+    end
+
+    context "trust with CA" do
+      let(:config) { super().merge(
+        "ssl_enabled" => true,
+        "ssl_certificate_authorities" => cert_fixture!('root.pem'),
+        "ssl_keystore_path" => cert_fixture!('server_from_root.jks'),
+        "ssl_keystore_password" => "pa$$w0rd"
+        # default `ssl_client_authentication` is 'none'
+      ) }
+
+      it "requires SSL Client Authentication" do
+        expected_message = '`ssl_certificate_authorities` is not supported because `ssl_client_authentication => none`'
+        expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+      end
+    end
+  end
 end
