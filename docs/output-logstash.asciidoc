@@ -1,4 +1,4 @@
-// :integration: logstash
+:integration: logstash
 :plugin: logstash
 :type: output
 :no_codec:
@@ -18,7 +18,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 === Logstash output plugin
 
-// include::{include_path}/plugin_header-integration.asciidoc[]
+include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
@@ -266,6 +266,6 @@ When the downstream input plugin is configured with a `username` and `password`,
 NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 
 [id="plugins-{type}s-{plugin}-common-options"]
-// include::{include_path}/{type}.asciidoc[]
+include::{include_path}/{type}.asciidoc[]
 
 :default_codec!:
