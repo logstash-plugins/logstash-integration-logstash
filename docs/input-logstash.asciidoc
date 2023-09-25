@@ -1,4 +1,4 @@
-// :integration: logstash
+:integration: logstash
 :plugin: logstash
 :type: input
 :no_codec:
@@ -18,7 +18,7 @@ END - GENERATED VARIABLES, DO NOT EDIT!
 
 === Logstash input plugin
 
-// include::{include_path}/plugin_header-integration.asciidoc[]
+include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
@@ -247,6 +247,6 @@ When this input plugin is configured with a `username`, it also requires a <<plu
 NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 
 [id="plugins-{type}s-{plugin}-common-options"]
-// include::{include_path}/{type}.asciidoc[]
+include::{include_path}/{type}.asciidoc[]
 
 :default_codec!:
