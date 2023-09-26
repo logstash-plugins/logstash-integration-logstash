@@ -1,3 +1,6 @@
+## 0.0.2
+  - Enable data compression [#10](https://github.com/logstash-plugins/logstash-integration-logstash/pull/10)
+
 ## 0.0.1
   - Minimal bootstrap of Logstash to Logstash plugin [#1](https://github.com/logstash-plugins/logstash-integration-logstash/pull/2)
   - Complete bootstrap and fix documentation [#3](https://github.com/logstash-plugins/logstash-integration-logstash/pull/3)
