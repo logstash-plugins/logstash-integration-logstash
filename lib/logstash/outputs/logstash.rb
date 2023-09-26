@@ -98,7 +98,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         'content_type' => 'application/x-ndjson',
         'format'       => 'json_batch',
 
-        'http_compression' => @compression_enabled,
+        'http_compression' => true,
       }
 
       if @username
