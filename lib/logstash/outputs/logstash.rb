@@ -13,10 +13,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   config :host,     :validate => :string,   :required => true
   config :port,     :validate => :number,   :required => true
 
-  # this config will set `http-output#http_compression => true`
-  # TODO: consider changing this option when we support HA, `http_compression` with %w(none gzip) setting might be better
-  config :compression_enabled, :validate => :boolean, :default => true
-
   # optional username/password credentials
   config :username, :validate => :string,   :required => false
   config :password, :validate => :password, :required => false
