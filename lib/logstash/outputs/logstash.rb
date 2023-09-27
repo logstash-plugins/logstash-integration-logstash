@@ -93,6 +93,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         # non-configurable codec
         'content_type' => 'application/x-ndjson',
         'format'       => 'json_batch',
+
+        'http_compression' => true,
       }
 
       if @username
