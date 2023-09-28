@@ -4,14 +4,28 @@ require 'logstash/outputs/base'
 require 'logstash/namespace'
 
 require "logstash/plugin_mixins/plugin_factory_support"
+require "logstash/plugin_mixins/validator_support/required_host_optional_port_validation_adapter"
 
 class LogStash::Outputs::Logstash < LogStash::Outputs::Base
+  extend LogStash::PluginMixins::ValidatorSupport::RequiredHostOptionalPortValidationAdapter
+
   include LogStash::PluginMixins::PluginFactorySupport
 
   config_name "logstash"
 
-  config :host,     :validate => :string,   :required => true
-  config :port,     :validate => :number,   :required => true
+  # Sets the host of the downstream Logstash instance.
+  # Host can be any of IPv4, IPv6 (requires to be in enclosed bracket) or host name, the forms:
+  #     `"127.0.0.1"`
+  #     `"127.0.0.1:9800"`
+  #     `"foo-bar.com"`
+  #     `"foo-bar.com:9800"`
+  #     `"[::1]"`
+  #     `"[::1]:9000"`
+  #     `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"`
+  #
+  # NOTE: `hosts` naming is intentional and multi-host support is planned.
+  #
+  config :hosts, :validate => :required_host_optional_port, :list => true, :required => true
 
   # optional username/password credentials
   config :username, :validate => :string,   :required => false
@@ -31,7 +45,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   config :ssl_verification_mode,       :validate => %w(full none), :default => 'full'
 
   # SSL:TRUST:SOURCE ca file
-  config :ssl_certificate_authorities, :validate => :path,         :list => true
+  config :ssl_certificate_authorities, :validate => :path, :list => true
 
   # SSL:TRUST:SOURCE truststore
   config :ssl_truststore_path,         :validate => :path
@@ -83,10 +97,12 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     logger.debug('inner HTTP output plugin has been closed')
   end
 
+  DEFAULT_PORT = 9800.freeze
+
   def inner_http_output_options
     @_inner_http_output_options ||= begin
       http_options = {
-        'url' => "#{@ssl_enabled ? 'https' : 'http'}://#{@host}:#{@port}",
+        'url'                  => construct_host_uri.to_s,
         'http_method'          => 'post',
         'retry_non_idempotent' => 'true',
 
@@ -117,6 +133,17 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
       http_options
     end
+  end
+
+  def construct_host_uri
+    logger.warn("Multiple `hosts` are provided but single is supported, using the first.") if @hosts.size > 1
+
+    scheme = @ssl_enabled ? 'https'.freeze : 'http'.freeze
+    host_port_pair = @hosts.first # Struct(:host, :port)
+    uri = LogStash::Util::SafeURI.new(host_port_pair[:host])
+    uri.port = host_port_pair[:port].nil? ? DEFAULT_PORT : host_port_pair[:port]
+    uri.update(:scheme, scheme)
+    uri
   end
 
   def ssl_identity_options

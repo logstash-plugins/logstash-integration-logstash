@@ -17,7 +17,7 @@ describe LogStash::Inputs::Logstash do
   end
 
   describe "a plugin instance with minimal config" do
-    subject(:instance) { described_class.new({ "port" => 123, "ssl_enabled" => false }) }
+    subject(:instance) { described_class.new({ "ssl_enabled" => false }) }
 
     it { is_expected.to respond_to(:register).with(0).arguments }
     it { is_expected.to respond_to(:run).with(1).argument }
@@ -26,7 +26,7 @@ describe LogStash::Inputs::Logstash do
   end
 
   describe "plugin register" do
-    let(:config) {{ "port" => 123 }}
+    let(:config) {{ }}
 
     let(:registered_plugin) { plugin.tap(&:register) }
 

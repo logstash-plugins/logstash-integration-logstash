@@ -1,3 +1,6 @@
+## 0.0.4
+  - Default 9800 port applied, multiple hosts can be configured now in upstream [#13](https://github.com/logstash-plugins/logstash-integration-logstash/pull/13)
+
 ## 0.0.3
   - Doc: Minor doc changes and version bump to facilitate adding integration files to doc build [#14](https://github.com/logstash-plugins/logstash-integration-logstash/pull/14)
 
