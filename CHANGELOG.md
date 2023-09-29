@@ -1,3 +1,6 @@
+## 0.0.3
+  - Doc: Minor doc changes and version bump to facilitate adding integration files to doc build [#14](https://github.com/logstash-plugins/logstash-integration-logstash/pull/14)
+
 ## 0.0.2
   - Enable data compression [#10](https://github.com/logstash-plugins/logstash-integration-logstash/pull/10)
 
