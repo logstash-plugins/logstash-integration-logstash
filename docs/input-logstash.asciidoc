@@ -25,8 +25,8 @@ include::{include_path}/plugin_header-integration.asciidoc[]
 Listen for events that are sent by a <<plugins-outputs-logstash>> in a pipeline that may be in another process or on another host.
 The upstream output must have a TCP route to the port on an interface that this plugin is bound to.
 
-NOTE: Sending events to this input by _any_ means other than <<plugins-outputs-logstash>> is neither advised nor supported.
-      We will maintain cross-compatibility with any two supported versions of output/input pair and reserve the right to change details such as protocol and encoding.
+NOTE: Sending events to this input by _any_ means other than `plugins-outputs-logstash` is neither advised nor supported.
+We will maintain cross-compatibility with any two supported versions of output/input pair and reserve the right to change details such as protocol and encoding.
 
 [id="plugins-{type}s-{plugin}-minimum-config"]
 ===== Minimum Configuration

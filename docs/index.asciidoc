@@ -29,7 +29,7 @@ The Logstash Integration Plugin provides integrated plugins for sending events f
 [id="plugins-{type}s-{plugin}-concepts"]
 ===== High-level concepts
 
-You can configure a `logstash` output to send events to a `logstash` input is in another pipeline that is running in a different process or on a different host.
+You can configure a `logstash` output to send events to a `logstash` input in another pipeline that is running in a different process or on a different host.
 
 To do so, you should first configure the downstream pipeline with a `logstash` input plugin, bound to an available port so that it can listen for inbound connections.
 Security is enabled by default, so you will need to either provide identity material or disable SSL.
