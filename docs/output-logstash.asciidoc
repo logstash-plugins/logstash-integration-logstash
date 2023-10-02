@@ -128,12 +128,12 @@ output plugins.
 * Value type is <<string,string>>
 * There is no default value for this setting.
 * Constraints:
-** When IPv6 is applied, IP address must be in an enclosed bracket.
-** When any URL omits a port component, the default `9800` is used.
+** When using IPv6, IP address must be in an enclosed in brackets.
+** When a port is not provided, the default `9800` is used.
 
 A downstream input {ls} host or IP address to connect.
 
-NOTE: Currently, plugin supports a single host. Multi-host support is coming soon.
+NOTE: Single host endpoint is supported for `hosts`. Multi-host support is coming soon.
 
 Host can be any of IPv4, IPv6 (in enclosed bracket) or host name, examples:
 

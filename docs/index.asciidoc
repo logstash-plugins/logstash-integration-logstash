@@ -53,7 +53,7 @@ input {
 Once the downstream pipeline is configured and running, you may send events from any number of upstream pipelines by adding a `logstash` output plugin that points to the downstream input.
 You may need to configure SSL to trust the certificates presented by the downstream input plugin.
 
-NOTE: A plugin supports a single host for `hosts` now. Multi-host support is coming soon.
+NOTE: Single host endpoint is supported for `hosts`. Multi-host support is coming soon.
 
 [source]
 ----
