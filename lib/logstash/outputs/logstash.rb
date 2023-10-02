@@ -25,7 +25,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   #
   # NOTE: `hosts` naming is intentional and multi-host support is planned.
   #
-  config :hosts, :validate => :required_host_optional_port, :list => true, :required => true
+  config :hosts, :validate => :required_host_optional_port, :required => true
 
   # optional username/password credentials
   config :username, :validate => :string,   :required => false
@@ -136,14 +136,12 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   def construct_host_uri
-    logger.warn("Multiple `hosts` are provided but single is supported, using the first.") if @hosts.size > 1
-
     scheme = @ssl_enabled ? 'https'.freeze : 'http'.freeze
-    host_port_pair = @hosts.first # Struct(:host, :port)
+    host_port_pair = @hosts # Struct(:host, :port)
     uri = LogStash::Util::SafeURI.new(host_port_pair[:host])
     uri.port = host_port_pair[:port].nil? ? DEFAULT_PORT : host_port_pair[:port]
     uri.update(:scheme, scheme)
-    uri
+    uri.freeze
   end
 
   def ssl_identity_options
