@@ -63,7 +63,7 @@ output {
 [id="plugins-{type}s-{plugin}-config-connecting"]
 ===== Configuration Concepts
 
-Configure this output plugin needs to connect to a {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin] by specifying its <<plugins-{type}s-{plugin}-hosts>>.
+Configure this output plugin to connect to a {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin] by specifying its `hosts`.
 Depending on the downstream plugin's configuration, you may need to also configure the target port, SSL, and/or credentials.
 
 [id="plugins-{type}s-{plugin}-config-ssl-trust"]
@@ -90,7 +90,7 @@ If the downstream input plugin is configured to request or require client authen
 [id="plugins-{type}s-{plugin}-config-credentials"]
 ===== Security: Credentials
 
-If the downstream `logstash-input` plugin is configured to require <<plugins-{type}s-{plugin}-username>> and <<plugins-{type}s-{plugin}-password>>,
+If the downstream `logstash-input` plugin is configured to require `username` and `password`,
 you will need to configure this output with a matching <<plugins-{type}s-{plugin}-username>> and <<plugins-{type}s-{plugin}-password>>.
 
 NOTE: when SSL is disabled, data and credentials will be transmitted in clear-text.
