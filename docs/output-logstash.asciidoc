@@ -64,14 +64,14 @@ output {
 ===== Configuration Concepts
 
 This output plugin needs to be configured to connect to a <<plugins-inputs-logstash>> by specifying its <<plugins-{type}s-{plugin}-hosts>>.
-Depending on the downstream plugin's configuration, you may need to also configure SSL and/or credentials.
+Depending on the downstream plugin's configuration, you may need to also configure the target port, SSL, and/or credentials.
 
 [id="plugins-{type}s-{plugin}-config-ssl-trust"]
 ===== Security: SSL Trust
 
 When communicating over SSL, this plugin establishes trust of the server it connects to before transmitting credentials or events.
 
-It does so by ensuring that the server presents a currently-valid certificate with identity claims matching <<plugins-{type}s-{plugin}-hosts>>, signed by a trusted signing authority, along with proof-of-possession of the associated private key material.
+It does so by ensuring that the responding server presents a currently-valid certificate with identity claims matching host it is connecting to, signed by a trusted signing authority, along with proof-of-possession of the associated private key material.
 
 The system trust store is used by default.
 You can provide an _alternate_ source of trust with _ONE OF_:
@@ -137,13 +137,14 @@ NOTE: Single host endpoint is supported for `hosts`. Multi-host support is comin
 
 Host can be any of IPv4, IPv6 (in enclosed bracket) or host name, examples:
 
-      `"127.0.0.1"
-      `"127.0.0.1:9800"`
-      `"foo-bar.com"`
-      `"foo-bar.com:9800"`
-      `"[::1]"`
-      `"[::1]:9000"`
-      `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"`
+* `"127.0.0.1"`
+* `"127.0.0.1:9801"`
+* `"ds.example.com"`
+* `"ds.example:9802"`
+* `"[::1]"`
+* `"[::1]:9803"`
+* `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"`
+* `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9804"`
 
 When connecting, communication to downstream input {ls} is secured with SSL unless configured otherwise.
 
