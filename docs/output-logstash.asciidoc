@@ -22,10 +22,10 @@ include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
-Send events to a <<plugins-inputs-logstash>> in a pipeline that may be in another process or on another host.
+Send events to a {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin] in a pipeline that may be in another process or on another host.
 You must have a TCP route to the port (defaults to 9800) on an interface that the downstream input is bound to.
 
-NOTE: Sending events to _any_ destination other than <<plugins-inputs-logstash>> is neither advised nor supported.
+NOTE: Sending events to _any_ destination other than a `logstash-input` plugin is neither advised nor supported.
       We will maintain cross-compatibility with any two supported versions of output/input pair and reserve the right to change details such as protocol and encoding.
 
 [id="plugins-{type}s-{plugin}-minimum-config"]
@@ -63,7 +63,7 @@ output {
 [id="plugins-{type}s-{plugin}-config-connecting"]
 ===== Configuration Concepts
 
-This output plugin needs to be configured to connect to a <<plugins-inputs-logstash>> by specifying its <<plugins-{type}s-{plugin}-hosts>>.
+Configure this output plugin to connect to a {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin] by specifying its `hosts`.
 Depending on the downstream plugin's configuration, you may need to also configure the target port, SSL, and/or credentials.
 
 [id="plugins-{type}s-{plugin}-config-ssl-trust"]
@@ -90,7 +90,7 @@ If the downstream input plugin is configured to request or require client authen
 [id="plugins-{type}s-{plugin}-config-credentials"]
 ===== Security: Credentials
 
-If the downstream <<plugins-inputs-logstash>> is configured to require <<plugins-inputs-logstash-username>> and <<plugins-inputs-logstash-password>>,
+If the downstream `logstash-input` plugin is configured to require `username` and `password`,
 you will need to configure this output with a matching <<plugins-{type}s-{plugin}-username>> and <<plugins-{type}s-{plugin}-password>>.
 
 NOTE: when SSL is disabled, data and credentials will be transmitted in clear-text.

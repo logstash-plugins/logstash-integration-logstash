@@ -23,8 +23,8 @@ include::{include_path}/plugin_header.asciidoc[]
 
 The Logstash Integration Plugin provides integrated plugins for sending events from one Logstash to another:
 
-* {logstash-ref}/plugins-outputs-logstash.html[Logstash Output Plugin]
-* {logstash-ref}/plugins-inputs-logstash.html[Logstash Input Plugin]
+* {logstash-ref}/plugins-outputs-logstash.html[Logstash output plugin]
+* {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin]
 
 [id="plugins-{type}s-{plugin}-concepts"]
 ===== High-level concepts
