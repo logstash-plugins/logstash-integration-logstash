@@ -6,7 +6,7 @@ require "logstash/outputs/logstash"
 
 describe LogStash::Outputs::Logstash do
 
-  let(:config) {{ "host" => "127.0.0.1", "port" => 123 }}
+  let(:config) {{ "hosts" => "127.0.0.1" }}
 
   subject(:plugin) { LogStash::Outputs::Logstash.new(config) }
 
@@ -30,8 +30,31 @@ describe LogStash::Outputs::Logstash do
   describe "plugin register" do
     let(:registered_plugin) { plugin.tap(&:register) }
 
+    describe "construct host URI" do
+
+      it "applies default https scheme and 9800 port" do
+        expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("https://127.0.0.1:9800/"))).to be_truthy
+      end
+
+      describe "SSL disabled" do
+        let(:config) { super().merge("ssl_enabled" => false) }
+
+        it "causes HTTP scheme" do
+          expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("http://127.0.0.1:9800/"))).to be_truthy
+        end
+      end
+
+      describe "custom port" do
+        let(:config) { super().merge("hosts" => "127.0.0.1:9808") }
+
+        it "will be applied" do
+          expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("https://127.0.0.1:9808/"))).to be_truthy
+        end
+      end
+    end
+
     describe "username and password auth" do
-      let(:config) { super().merge("host" => "my-ls-downstream.com", "ssl_enabled" => false) }
+      let(:config) { super().merge("hosts" => "my-ls-downstream.com:1234", "ssl_enabled" => false) }
 
       context "with `username`" do
         let(:config) { super().merge("username" => "test_user") }

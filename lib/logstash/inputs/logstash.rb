@@ -13,7 +13,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   config_name "logstash"
 
   config :host,     :validate => :string,   :default => "0.0.0.0"
-  config :port,     :validate => :number,   :required => true
+  config :port,     :validate => :number,   :default => 9800
 
   # optional username/password credentials
   config :username, :validate => :string,   :required => false

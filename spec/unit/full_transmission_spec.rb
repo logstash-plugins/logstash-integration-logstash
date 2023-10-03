@@ -91,7 +91,7 @@ describe 'Logstash Output -> Input complete transmission' do
   end
 
   context 'basic plaintext' do
-    let(:output_plugin) { LogStash::Outputs::Logstash.new("host" => "127.0.0.1", "port" => port, "ssl_enabled" => false) }
+    let(:output_plugin) { LogStash::Outputs::Logstash.new("hosts" => "127.0.0.1:#{port}", "ssl_enabled" => false) }
     let(:input_plugin) { LogStash::Inputs::Logstash.new("host" => "127.0.0.1", "port" => port, "ssl_enabled" => false) }
 
     include_context 'transmission'
@@ -110,7 +110,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output connects via ssl' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_certificate_authorities" => cert_fixture!('root.pem'),
           })
       }
@@ -122,7 +122,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output connects without ssl' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_enabled" => false,
           })
       }
@@ -148,7 +148,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output presents peer certificate' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_certificate_authorities" => cert_fixture!('root.pem'),
             "ssl_keystore_path" => cert_fixture!('client_from_root.jks'),
             "ssl_keystore_password" => "12345678",
@@ -162,7 +162,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output presents NO certificate' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_certificate_authorities" => cert_fixture!('root.pem'),
           })
       }
@@ -174,7 +174,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output presents untrusted certificate' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_certificate_authorities" => cert_fixture!('root.pem'),
             "ssl_keystore_path" => cert_fixture!('client_from_untrusted.jks'),
             "ssl_keystore_password" => "12345678",
@@ -188,7 +188,7 @@ describe 'Logstash Output -> Input complete transmission' do
     context 'output presents self-signed certificate' do
       let(:output_plugin) {
         LogStash::Outputs::Logstash.new({
-            "host" => "127.0.0.1", "port" => port,
+            "hosts" => "127.0.0.1:#{port}",
             "ssl_certificate_authorities" => cert_fixture!('root.pem'),
             "ssl_keystore_path" => cert_fixture!('client_self_signed.jks'),
             "ssl_keystore_password" => "12345678",

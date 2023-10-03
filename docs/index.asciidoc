@@ -40,7 +40,7 @@ NOTE: You will need a TCP route from the upstream pipeline to the interface that
 ----
 input {
   logstash {
-    port => 8080
+    port => 9800
 
     # SSL IDENTITY <1>
     ssl_keystore_path      => "/path/to/identity.p12"
@@ -53,12 +53,13 @@ input {
 Once the downstream pipeline is configured and running, you may send events from any number of upstream pipelines by adding a `logstash` output plugin that points to the downstream input.
 You may need to configure SSL to trust the certificates presented by the downstream input plugin.
 
+NOTE: Single host endpoint is supported for `hosts`. Multi-host support is coming soon.
+
 [source]
 ----
 output {
   logstash {
-    host => "10.0.0.123"
-    port => 8080
+    hosts => "10.0.0.123:9800"
 
     # SSL TRUST <1>
     ssl_truststore_path => "/path/to/truststore.p12"

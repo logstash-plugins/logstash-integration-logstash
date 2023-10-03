@@ -17,7 +17,7 @@ describe LogStash::Inputs::Logstash do
   end
 
   describe "a plugin instance with minimal config" do
-    subject(:instance) { described_class.new({ "port" => 123, "ssl_enabled" => false }) }
+    subject(:instance) { described_class.new({ "ssl_enabled" => false }) }
 
     it { is_expected.to respond_to(:register).with(0).arguments }
     it { is_expected.to respond_to(:run).with(1).argument }
@@ -26,9 +26,38 @@ describe LogStash::Inputs::Logstash do
   end
 
   describe "plugin register" do
-    let(:config) {{ "port" => 123 }}
+    let(:config) {{ }}
 
     let(:registered_plugin) { plugin.tap(&:register) }
+    context "configuring port" do
+      let(:config) { { "ssl_enabled" => false } } # minimum config
+      context "default value" do
+        it "reflects default port" do
+          expect(registered_plugin.port).to eq 9800
+        end
+      end
+      context "explicitly configured" do
+        let(:config) { super().merge("port" => 1734) }
+        it "reflects the configured port" do
+          expect(registered_plugin.port).to eq 1734
+        end
+      end
+    end
+
+    context "configuring host" do
+      let(:config) { { "ssl_enabled" => false } } # minimum config
+      context "default value" do
+        it "reflects default host" do
+          expect(registered_plugin.host).to eq "0.0.0.0"
+        end
+      end
+      context "explicitly configured" do
+        let(:config) { super().merge("host" => "10.0.3.218") }
+        it "reflects the configured host" do
+          expect(registered_plugin.host).to eq "10.0.3.218"
+        end
+      end
+    end
 
     context "username and password auth" do
       let(:config) { super().merge("host" => "my-ls-upstream.com", "ssl_enabled" => false) }

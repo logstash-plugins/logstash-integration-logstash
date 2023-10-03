@@ -1,3 +1,8 @@
+## 0.0.4
+  - Simplify configuration [#13](https://github.com/logstash-plugins/logstash-integration-logstash/pull/13)
+    - Introduce a default `port` of `9800` for both input and output plugins
+    - BREAKING: Introduce `hosts` config to output plugin, _replacing_ its separate `host` and `port` configurations
+
 ## 0.0.3
   - Doc: Minor doc changes and version bump to facilitate adding integration files to doc build [#14](https://github.com/logstash-plugins/logstash-integration-logstash/pull/14)
 
