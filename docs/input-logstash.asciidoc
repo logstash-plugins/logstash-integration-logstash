@@ -22,7 +22,7 @@ include::{include_path}/plugin_header-integration.asciidoc[]
 
 ==== Description
 
-Listen for events that are sent by a <<plugins-outputs-logstash>> in a pipeline that may be in another process or on another host.
+Listen for events that are sent by a {logstash-ref}/plugins-outputs-logstash.html[Logstash output plugin] in a pipeline that may be in another process or on another host.
 The upstream output must have a TCP route to the port (defaults to 9800) on an interface that this plugin is bound to.
 
 NOTE: Sending events to this input by _any_ means other than `plugins-outputs-logstash` is neither advised nor supported.
@@ -91,7 +91,7 @@ NOTE: Client-certificate verification does _not_ verify identity claims on the p
 ===== Security: Credentials
 
 You can also configure this plugin to require a specific username/password be provided by configuring <<plugins-{type}s-{plugin}-username>> and <<plugins-{type}s-{plugin}-password>>.
-Doing so requires connecting <<plugins-outputs-logstash>> clients to provide matching <<plugins-outputs-{plugin}-username>> and <<plugins-outputs-{plugin}-password>>.
+Doing so requires connecting `logstash-output` plugin clients to provide matching <<plugins-{type}s-{plugin}-username>> and <<plugins-{type}s-{plugin}-password>>.
 
 NOTE: when SSL is disabled, data and credentials will be received in clear-text.
 
@@ -240,7 +240,7 @@ A password or passphrase of the <<plugins-{type}s-{plugin}-ssl_key>>.
 * There is no default value for this setting.
 
 Username for password-based authentication.
-When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream <<plugins-outputs-logstash>> must also be configured with a matching `username`/`password` pair.
+When this input plugin is configured with a `username`, it also requires a <<plugins-{type}s-{plugin}-password>>, and any upstream `logstash-output` plugin must also be configured with a matching `username`/`password` pair.
 
 NOTE: when SSL is disabled, credentials will be transmitted in clear-text.
 
