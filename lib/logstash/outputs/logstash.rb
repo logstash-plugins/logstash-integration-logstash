@@ -214,10 +214,12 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       end
     end
   rescue => e
+    # This should never happen unless there's a flat out bug in the code
     logger.error("Error occurred while sending events",
                  :class => e.class.name,
                  :message => e.message,
                  :backtrace => e.backtrace)
+    raise e
   end
 
   def send_event(uri, events, attempt)
