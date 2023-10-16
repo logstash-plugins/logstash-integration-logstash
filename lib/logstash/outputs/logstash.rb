@@ -18,13 +18,11 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   # Sets the host of the downstream Logstash instance.
   # Host can be any of IPv4, IPv6 (requires to be in enclosed bracket) or host name, the forms:
-  #     `["127.0.0.1"]`
-  #     `["127.0.0.1:9800"]`
+  #     `"127.0.0.1"` or `["127.0.0.1"]` if single host with default port
+  #     `"127.0.0.1:9801"` or `["127.0.0.1:9801"]` if single host with custom port
   #     `["foo-bar.com", "foo-bar.com:9800"]`
   #     `["[::1]", "[::1]:9000"]`
-  #     `["[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"]`
-  #
-  # NOTE: `hosts` naming is intentional and multi-host support is planned.
+  #     `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"`
   #
   config :hosts, :validate => :required_host_optional_port, :list => true, :required => true
 
@@ -305,16 +303,4 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     RETRIABLE_CODES.include?(response.code)
   end
 
-  class RetryTimerTask < java.util.TimerTask
-    def initialize(pending, event, attempt)
-      @pending = pending
-      @event = event
-      @attempt = attempt
-      super()
-    end
-
-    def run
-      @pending << [@event, @attempt]
-    end
-  end
 end
