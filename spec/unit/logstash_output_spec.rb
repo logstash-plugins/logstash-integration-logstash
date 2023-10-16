@@ -9,6 +9,7 @@ describe LogStash::Outputs::Logstash do
   let(:config) {{ "hosts" => "127.0.0.1" }}
 
   subject(:plugin) { LogStash::Outputs::Logstash.new(config) }
+  let(:registered_plugin) { plugin.tap(&:register) }
 
   describe "a plugin class" do
     subject { described_class }
@@ -28,19 +29,18 @@ describe LogStash::Outputs::Logstash do
   end
 
   describe "plugin register" do
-    let(:registered_plugin) { plugin.tap(&:register) }
 
     describe "construct host URI" do
 
       it "applies default https scheme and 9800 port" do
-        expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("https://127.0.0.1:9800/"))).to be_truthy
+        expect(registered_plugin.send(:construct_host_uri).first.eql?("https://127.0.0.1:9800/")).to be_truthy
       end
 
       describe "SSL disabled" do
         let(:config) { super().merge("ssl_enabled" => false) }
 
         it "causes HTTP scheme" do
-          expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("http://127.0.0.1:9800/"))).to be_truthy
+          expect(registered_plugin.send(:construct_host_uri).first.eql?("http://127.0.0.1:9800/")).to be_truthy
         end
       end
 
@@ -48,7 +48,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("hosts" => "127.0.0.1:9808") }
 
         it "will be applied" do
-          expect(registered_plugin.construct_host_uri.eql?(::LogStash::Util::SafeURI.new("https://127.0.0.1:9808/"))).to be_truthy
+          expect(registered_plugin.send(:construct_host_uri).first.eql?("https://127.0.0.1:9808/")).to be_truthy
         end
       end
     end
@@ -61,7 +61,7 @@ describe LogStash::Outputs::Logstash do
 
         it "requires `password`" do
           expected_message = "`password` is REQUIRED when `username` is provided"
-          expect{ plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
+          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
 
