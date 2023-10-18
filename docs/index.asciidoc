@@ -29,7 +29,7 @@ The Logstash Integration Plugin provides integrated plugins for sending events f
 [id="plugins-{type}s-{plugin}-concepts"]
 ===== High-level concepts
 
-You can configure a `logstash` output to send events to multiple `logstash` inputs in another pipelines that are running in different processes or on different hosts.
+You can configure a `logstash` output to send events to one or more `logstash` inputs, which are each in another pipeline that is running in different processes or on a different host.
 
 To do so, you should first configure the downstream pipeline with a `logstash` input plugin, bound to an available port so that it can listen for inbound connections.
 Security is enabled by default, so you will need to either provide identity material or disable SSL.
@@ -50,7 +50,7 @@ input {
 ----
 <1> Identity material typically should include identity claims about the hostnames and ip addresses that will be used by upstream output plugins.
 
-Once the downstream pipeline is configured and running, you may send events from any number of upstream pipelines by adding a `logstash` output plugin that points to the downstream inputs.
+Once the downstream pipeline is configured and running, you may send events from any number of upstream pipelines by adding a `logstash` output plugin that points to the downstream input.
 You may need to configure SSL to trust the certificates presented by the downstream input plugin.
 
 [source]
@@ -70,19 +70,7 @@ output {
 [id="plugins-{type}s-{plugin}-load-balancing"]
 ==== Load Balancing
 
-`logstash` output distributes the load among `logstash` inputs based on a smart algorithms. Assuming we have a following configuration:
-[source]
-----
-output {
-  logstash {
-    hosts => ["1.1.1.1:9801", "2.2.2.2:9802", "3.3.3.3:9803"]
-    ...
-  }
-}
-----
 
-With three successful send requests, each host receives single request.
-If `1.1.1.1` has an ongoing request, the plugin send the upcoming request to either `2.2.2.2` or `3.3.3.3` depending on their last request time and concurrency.
-For any failure cases, the host will be treated with a 60 seconds cool off period.
+When a `logstash` output is configured to send to multiple `hosts`, it distributes events in batches to _all_ of those downstream hosts fairly, favoring those without recent errors. This increases the likelihood of each batch being routed to a downstream that is up and has capacity to receive events.
 
 :no_codec!:

@@ -131,16 +131,16 @@ output plugins.
 ** When using IPv6, IP address must be in an enclosed in brackets.
 ** When a port is not provided, the default `9800` is used.
 
-A downstream input {ls} hosts or IP addresses to connect.
+The addresses of one or more downstream `input`s to connect to.
 
 Host can be any of IPv4, IPv6 (in enclosed bracket) or host name, examples:
 
-* `"127.0.0.1"` or `["127.0.0.1"]` if single host
-* `"127.0.0.1:9801"` or `["127.0.0.1:9801"]` if single host with port
-* `["ds.example.com", "ds.example:9802"]`
+* `"127.0.0.1"`
+* `"127.0.0.1:9801"`
+* `"ds.example.com"`
+* `"ds.example.com:9802"`
 * `"[::1]"`
 * `"[::1]:9803"`
-* `["[::1]:9801", "[::1]:9811"]`
 * `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]"`
 * `"[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9804"`
 

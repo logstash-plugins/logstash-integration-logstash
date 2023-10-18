@@ -10,7 +10,7 @@ require "zlib"
 class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   extend LogStash::PluginMixins::ValidatorSupport::RequiredHostOptionalPortValidationAdapter
 
-  include LogStash::PluginMixins::HttpClient[:with_deprecated => true]
+  include LogStash::PluginMixins::HttpClient[:with_deprecated => false]
 
   require "logstash/utils/fair_load_balancer"
 

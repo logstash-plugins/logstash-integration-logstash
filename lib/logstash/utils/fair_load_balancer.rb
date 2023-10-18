@@ -17,7 +17,7 @@ class FairLoadBalancer
     fail ArgumentError, "`cool_off` requires integer value." unless cool_off.kind_of?(Integer)
 
     @cool_off = cool_off
-    @downstream_infos = host_infos.map do |host_info|
+    @host_states = host_infos.map do |host_info|
       HostState.new(host_info)
     end
   end
@@ -29,7 +29,7 @@ class FairLoadBalancer
   # @yield param selected [HostState]
   def select
     selected = synchronize { pick_one.tap(&:increment) }
-    yield selected
+    yield selected.uri
   rescue
     synchronize { selected.mark_error }
     raise
@@ -41,11 +41,11 @@ class FairLoadBalancer
 
   def pick_one
     threshold = Time.now.to_i - @cool_off
-    @downstream_infos.sort_by do |downstream_state|
+    @host_states.sort_by do |downstream_state|
       [
-        [downstream_state.last_error, threshold].max, # deprioritize recent errors
-        downstream_state.concurrent,                  # deprioritize high concurrency
-        downstream_state.last_start                   # deprioritize recent use
+        [host_state.last_error, threshold].max, # deprioritize recent errors
+        host_state.concurrent,                  # deprioritize high concurrency
+        host_state.last_start                   # deprioritize recent use
       ]
     end.first
   end
@@ -53,14 +53,14 @@ class FairLoadBalancer
   class HostState
     def initialize(host_uri)
       @uri = host_uri
+      @last_error = 0
       @concurrent = 0
       @last_start = 0
-      @last_error = 0
     end
     attr_reader :uri
+    attr_reader :last_error
     attr_reader :concurrent
     attr_reader :last_start
-    attr_reader :last_error
 
     def increment
       @concurrent += 1
