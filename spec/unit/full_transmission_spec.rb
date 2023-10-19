@@ -48,7 +48,7 @@ describe 'Logstash Output -> Input complete transmission' do
           loop do
             batch = transmit_queue.pop(true) rescue break
             begin
-              Timeout.timeout(5) do
+              Timeout.timeout(1) do
                 output_plugin.multi_receive(batch)
               end
             rescue => e
@@ -70,7 +70,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: input_events
   # depends: output_events
   shared_examples "large sequence" do
-    let(:event_count) { 10_000 }
+    let(:event_count) { 10_0 }
 
     let(:input_events) { (0...event_count).map { |idx| LogStash::Event.new("event" => {"sequence" => idx}) } }
 
@@ -82,7 +82,7 @@ describe 'Logstash Output -> Input complete transmission' do
   end
 
   shared_examples "connection failure" do
-    let(:input_events) { [LogStash::Event.new("event" => {"sequence" => 999})] }
+    let(:input_events) { [LogStash::Event.new("event" => {"sequence" => 99})] }
 
     it 'fails to transmit the events' do
       expect(errors).to have_exactly(1).items

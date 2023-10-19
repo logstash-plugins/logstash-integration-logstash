@@ -1,6 +1,6 @@
 require "monitor"
 
-class FairLoadBalancer
+class LoadBalancer
   include MonitorMixin
 
   ##
@@ -41,7 +41,7 @@ class FairLoadBalancer
 
   def pick_one
     threshold = Time.now.to_i - @cool_off
-    @host_states.sort_by do |downstream_state|
+    @host_states.sort_by do |host_state|
       [
         [host_state.last_error, threshold].max, # deprioritize recent errors
         host_state.concurrent,                  # deprioritize high concurrency

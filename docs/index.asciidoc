@@ -70,7 +70,6 @@ output {
 [id="plugins-{type}s-{plugin}-load-balancing"]
 ==== Load Balancing
 
-
 When a `logstash` output is configured to send to multiple `hosts`, it distributes events in batches to _all_ of those downstream hosts fairly, favoring those without recent errors. This increases the likelihood of each batch being routed to a downstream that is up and has capacity to receive events.
 
 :no_codec!:

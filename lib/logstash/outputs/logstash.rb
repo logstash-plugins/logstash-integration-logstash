@@ -12,7 +12,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   include LogStash::PluginMixins::HttpClient[:with_deprecated => false]
 
-  require "logstash/utils/fair_load_balancer"
+  require "logstash/utils/load_balancer"
 
   config_name "logstash"
 
@@ -26,32 +26,9 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   #
   config :hosts, :validate => :required_host_optional_port, :list => true, :required => true
 
-  # optional username/password credentials
-  config :username, :validate => :string,   :required => false
-  config :password, :validate => :password, :required => false
+  config :username, :validate => :string, :required => false
 
-  config :ssl_enabled,                 :validate => :boolean, :default => true
-
-  # SSL:IDENTITY:SOURCE cert/key pair
-  config :ssl_certificate,             :validate => :path
-  config :ssl_key,                     :validate => :path
-
-  # SSL:IDENTITY:SOURCE keystore
-  config :ssl_keystore_path,           :validate => :path
-  config :ssl_keystore_password,       :validate => :password
-
-  # SSL:TRUST:CONFIG
-  config :ssl_verification_mode,       :validate => %w(full none), :default => 'full'
-
-  # SSL:TRUST:SOURCE ca file
-  config :ssl_certificate_authorities, :validate => :path, :list => true
-
-  # SSL:TRUST:SOURCE truststore
-  config :ssl_truststore_path,         :validate => :path
-  config :ssl_truststore_password,     :validate => :password
-
-  # SSL:TUNING
-  config :ssl_supported_protocols, :validate => :string, :list => true
+  config :ssl_enabled, :validate => :boolean, :default => true
 
   DEFAULT_PORT = 9800.freeze
 
@@ -77,10 +54,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
     end
 
-    if @ssl_certificate_authorities && @ssl_certificate_authorities.size > 1
-      fail LogStash::ConfigurationError, 'The `logstash` output supports at most one `ssl_certificate_authorities` path'
-    end
-
     @headers = {}.tap do | header |
       header["Content-Type"] = "application/x-ndjson"
       header["Content-Encoding"] = "gzip"
@@ -92,15 +65,18 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def register
     logger.debug("Registering `logstash` output plugin.")
 
-    validate_auth_settings!
+    # TODO: confirm if we have a plan to change @user to @username
+    logger.warn("Both `user` and `username` are defined, using `username` value.") if @user && @username
+    @user = @username ? @username.freeze : @user
+
     if @ssl_enabled == false
       rejected_ssl_settings = @original_params.keys.select { |k| k.start_with?('ssl_') } - %w(ssl_enabled)
       fail(LogStash::ConfigurationError, "Explicit SSL-related settings not supported because `ssl_enabled => false`: #{rejected_ssl_settings}") if rejected_ssl_settings.any?
     end
-    validate_ssl_identity_options!
-    validate_ssl_trust_options!
 
-    @load_balancer = FairLoadBalancer.new(construct_host_uri)
+    # if we don't initialize now, we get runtime error when sending events if there are issues with configs
+    @http_client = client
+    @load_balancer = LoadBalancer.new(construct_host_uri)
 
     logger.debug("`logstash` output plugin has been registered.")
   end
@@ -119,7 +95,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   def close
     logger.debug("Closing `logstash` output plugin.")
-    client.close
+    @http_client.close
     logger.debug("`logstash` output plugin has been closed.")
   end
 
@@ -137,45 +113,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   private
-
-  def validate_auth_settings!
-    if @username
-      fail(LogStash::ConfigurationError, '`password` is REQUIRED when `username` is provided') if @password.nil?
-      logger.warn("transmitting credentials over non-secured connection") if @ssl_enabled == false
-    elsif @password
-      fail(LogStash::ConfigurationError, '`password` not allowed unless `username` is configured')
-    end
-  end
-
-  def validate_ssl_identity_options!
-    if @ssl_certificate && @ssl_keystore_path
-      fail(LogStash::ConfigurationError, 'SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both')
-    elsif @ssl_certificate
-      fail(LogStash::ConfigurationError, "`ssl_key` is REQUIRED when `ssl_certificate` is provided") if @ssl_key.nil?
-    elsif @ssl_key
-      fail(LogStash::ConfigurationError, '`ssl_key` is not allowed unless `ssl_certificate` is configured')
-    elsif @ssl_keystore_path
-      fail(LogStash::ConfigurationError, "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided") if @ssl_keystore_password.nil?
-    elsif @ssl_keystore_password
-      fail(LogStash::ConfigurationError, "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured")
-    else
-      # acceptable
-    end
-  end
-
-  def validate_ssl_trust_options!
-    if @ssl_certificate_authorities&.any? && @ssl_truststore_path
-      fail(LogStash::ConfigurationError, 'SSL trust can be configured with EITHER `ssl_certificate_authorities` OR `ssl_truststore_*`, but not both')
-    elsif @ssl_certificate_authorities&.any?
-      fail(LogStash::ConfigurationError, 'SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
-    elsif @ssl_truststore_path
-      fail(LogStash::ConfigurationError, 'SSL Truststore cannot be configured when `ssl_verification_mode => none`') if @ssl_verification_mode == 'none'
-      fail(LogStash::ConfigurationError, '`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided') if @ssl_truststore_password.nil?
-
-    elsif @ssl_truststore_password
-      fail(LogStash::ConfigurationError, '`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured')
-    end
-  end
 
   def construct_host_uri
     scheme = @ssl_enabled ? 'https'.freeze : 'http'.freeze
@@ -207,16 +144,18 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       # TODO: what if all hosts are unreachable?
       # current behaviour is to continuously observe if plugin can send the events
 
-      selected_host_uri, body = "", {}
+      body = LogStash::Json.dump(events.map {|e| e.to_hash })
+      compressed_body = gzip(body)
+
+      current_host_uri = ""
       begin
-        response = @load_balancer.select do | selected_host |
-          selected_host_uri = selected_host.uri
-          body = LogStash::Json.dump(events.map {|e| e.to_hash })
-          client.send(HTTP_METHOD, selected_host_uri, :body => gzip(body), :headers => @headers).call
+        response = @load_balancer.select do | selected_host_uri |
+          current_host_uri = selected_host_uri
+          @http_client.send(HTTP_METHOD, selected_host_uri, :body => compressed_body, :headers => @headers).call
         end
-        action = analyze_response(selected_host_uri, response, events)
+        action = analyze_response(current_host_uri, response, events)
       rescue => exception
-        action = analyze_exception(selected_host_uri, exception, body)
+        action = analyze_exception(current_host_uri, exception, body)
       end
 
       if action == :retry
@@ -239,7 +178,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def analyze_response(uri, response, events)
     return :success if response_success?(response)
 
-    if RETRIABLE_CODES.include?(response.code)
+    if retryable_response?(response.code)
       if response.code == 429
         logger.debug? && logger.debug("Encountered a retriable 429 response.")
       else
