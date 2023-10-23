@@ -176,18 +176,19 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   def analyze_response(uri, response, events)
-    return :success if response_success?(response)
+    response_code = response.code
+    return :success if response_success?(response_code)
 
-    if retryable_response?(response.code)
-      if response.code == 429
+    if retryable_response?(response_code)
+      if response_code == 429
         logger.debug? && logger.debug("Encountered a retriable 429 response.")
       else
-        logger.warn("Encountered a retryable request in `logstash` output", :code => response.code, :body => response.body)
+        logger.warn("Encountered a retryable request in `logstash` output", :code => response_code, :body => response.body)
       end
       return :retry
     else
       logger.error("Encountered error",
-                   :response_code => response.code,
+                   :response_code => response_code,
                    :host => uri,
                    :events => events
       )
@@ -218,8 +219,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     gz.string
   end
 
-  def response_success?(response)
-    response.code >= 200 && response.code <= 299
+  def response_success?(response_code)
+    response_code >= 200 && response_code <= 299
   end
 
   def retryable_exception?(exception)
@@ -235,8 +236,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       RETRYABLE_EXCEPTION_MESSAGES.any? { |snippet| exception.message =~ snippet }
   end
 
-  def retryable_response?(response)
-    RETRIABLE_CODES.include?(response.code)
+  def retryable_response?(response_code)
+    RETRIABLE_CODES.include?(response_code)
   end
 
 end

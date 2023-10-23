@@ -86,38 +86,77 @@ describe LogStash::Outputs::Logstash do
   end
 
   describe "batch send" do
+    let(:client) { double("Manticore client") }
+    let(:response) { double("response object") }
 
-    it "should successfully send events" do
-      allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send).and_return({ "code" => 200 })
+    it "successfully sends events" do
+      allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send).and_return(client)
+      allow(client).to receive(:call).and_return(response)
+      allow(response).to receive(:code).and_return(200)
+      expect(registered_plugin).to receive(:analyze_response).with(any_args).and_return(:success)
+
       registered_plugin.multi_receive([event])
-      #expect(registered_plugin).to receive(:analyze_response) do |action|
-      #  expect(action).to eq(:success)
-      #end
     end
 
-    describe "retry with a response codes" do
+    describe "with a response codes" do
 
-      it "with internal server error" do
-
+      before do
+        allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send).and_return(client)
+        allow(client).to receive(:call).and_return(response)
       end
 
-      it "with too many requests error" do
+      it "retries on retriable server errors" do
+        # initial return code is either 429 or 500 and then 200 to stop the while retry loop
+        allow(response).to receive(:code).and_return([429, 500].sample, 200)
+        allow(response).to receive(:body).and_return("Retriable error.", "Send succeeded.")
+        expect(registered_plugin).to receive(:analyze_response).exactly(2).and_call_original
+        expect(registered_plugin).to receive(:analyze_exception).never
+
+        registered_plugin.multi_receive([event])
+      end
+
+      it "doesn't retry on other non-retriable errors" do
+        # initial return code is either 400 or 404 and then 200 to stop the while retry loop
+        allow(response).to receive(:code).and_return([400, 404].sample)
+        allow(response).to receive(:body).and_return("Non-retriable error.", "Send succeeded.")
+        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original
+        expect(registered_plugin).to receive(:analyze_exception).never
+
+        registered_plugin.multi_receive([event])
 
       end
     end
 
-    describe "retry with a exception message" do
+    describe "with an exception message" do
+      let(:config) { super().merge("hosts" => %w[127.0.0.1 my-ls-downstream.com:1234]) }
+      let(:exception_raising_client) { double("Exceptional Manticore client") }
+
+      before do
+        # a simulation, where 127.0.0.1 host raises an exception and retry to my-ls-downstream.com will be succeeded
+        allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send) do | _, url, _, _|
+          url.eql?("https://127.0.0.1:9800/") ? exception_raising_client : client
+        end
+      end
 
       it "with Manticore socket timeout" do
-        # ::Manticore::SocketTimeout
+        allow(exception_raising_client).to receive(:call).and_raise(Manticore::SocketTimeout.new)
+        allow(client).to receive(:call).and_return(response)
+        allow(response).to receive(:code).and_return(200)
+        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original # catches the success
+        expect(registered_plugin).to receive(:analyze_exception).exactly(1).and_call_original
+
+        registered_plugin.multi_receive([event])
       end
 
       it "with connection reset by peer error" do
+        allow(exception_raising_client).to receive(:call).and_raise(Manticore::UnknownException.new "Connection reset by peer")
+        allow(client).to receive(:call).and_return(response)
+        allow(response).to receive(:code).and_return(200)
+        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original # catches the success
+        expect(registered_plugin).to receive(:analyze_exception).exactly(1).and_call_original
 
+        registered_plugin.multi_receive([event])
       end
     end
-
-    # shutdown requested behaviour
-
   end
 end
