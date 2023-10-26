@@ -87,13 +87,16 @@ describe LogStash::Outputs::Logstash do
 
   describe "batch send" do
     let(:client) { double("Manticore client") }
-    let(:response) { double("response object") }
+    let(:response) { double("Response object") }
 
     it "successfully sends events" do
-      allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send).and_return(client)
+      allow(registered_plugin.http_client).to receive(:post).and_return(client)
       allow(client).to receive(:call).and_return(response)
       allow(response).to receive(:code).and_return(200)
-      expect(registered_plugin).to receive(:analyze_response).with(any_args).and_return(:success)
+      expect(registered_plugin).to receive(:response_success?).once.and_call_original
+      expect(registered_plugin).to receive(:log_response).never
+      expect(registered_plugin).to receive(:retryable_exception?).never
+      expect(registered_plugin).to receive(:log_exception).never
 
       registered_plugin.multi_receive([event])
     end
@@ -101,26 +104,31 @@ describe LogStash::Outputs::Logstash do
     describe "with a response codes" do
 
       before do
-        allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send).and_return(client)
+        allow(registered_plugin.http_client).to receive(:post).and_return(client)
         allow(client).to receive(:call).and_return(response)
       end
 
       it "retries on retriable server errors" do
         # initial return code is either 429 or 500 and then 200 to stop the while retry loop
-        allow(response).to receive(:code).and_return([429, 500].sample, 200)
+        allow(response).to receive(:code).and_return([429, 500].sample, [429, 500].sample, 200) # code will be called three times
         allow(response).to receive(:body).and_return("Retriable error.", "Send succeeded.")
-        expect(registered_plugin).to receive(:analyze_response).exactly(2).and_call_original
-        expect(registered_plugin).to receive(:analyze_exception).never
+
+        expect(registered_plugin).to receive(:response_success?).exactly(2).and_call_original
+        expect(registered_plugin).to receive(:log_response).once
+        expect(registered_plugin).to receive(:retryable_exception?).never
+        expect(registered_plugin).to receive(:log_exception).never
 
         registered_plugin.multi_receive([event])
       end
 
       it "doesn't retry on other non-retriable errors" do
-        # initial return code is either 400 or 404 and then 200 to stop the while retry loop
         allow(response).to receive(:code).and_return([400, 404].sample)
         allow(response).to receive(:body).and_return("Non-retriable error.", "Send succeeded.")
-        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original
-        expect(registered_plugin).to receive(:analyze_exception).never
+
+        expect(registered_plugin).to receive(:response_success?).once.and_call_original
+        expect(registered_plugin).to receive(:log_response).once
+        expect(registered_plugin).to receive(:retryable_exception?).never
+        expect(registered_plugin).to receive(:log_exception).never
 
         registered_plugin.multi_receive([event])
 
@@ -133,7 +141,7 @@ describe LogStash::Outputs::Logstash do
 
       before do
         # a simulation, where 127.0.0.1 host raises an exception and retry to my-ls-downstream.com will be succeeded
-        allow(registered_plugin.instance_variable_get(:@http_client)).to receive(:send) do | _, url, _, _|
+        allow(registered_plugin.http_client).to receive(:post) do | url, _, _|
           url.eql?("https://127.0.0.1:9800/") ? exception_raising_client : client
         end
       end
@@ -142,8 +150,12 @@ describe LogStash::Outputs::Logstash do
         allow(exception_raising_client).to receive(:call).and_raise(Manticore::SocketTimeout.new)
         allow(client).to receive(:call).and_return(response)
         allow(response).to receive(:code).and_return(200)
-        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original # catches the success
-        expect(registered_plugin).to receive(:analyze_exception).exactly(1).and_call_original
+
+        # retry succeeds and breaks loop
+        expect(registered_plugin).to receive(:retryable_exception?).once.and_call_original
+        expect(registered_plugin).to receive(:log_exception).once
+        expect(registered_plugin).to receive(:response_success?).once.and_call_original
+        expect(registered_plugin).to receive(:log_response).never
 
         registered_plugin.multi_receive([event])
       end
@@ -152,8 +164,11 @@ describe LogStash::Outputs::Logstash do
         allow(exception_raising_client).to receive(:call).and_raise(Manticore::UnknownException.new "Connection reset by peer")
         allow(client).to receive(:call).and_return(response)
         allow(response).to receive(:code).and_return(200)
-        expect(registered_plugin).to receive(:analyze_response).exactly(1).and_call_original # catches the success
-        expect(registered_plugin).to receive(:analyze_exception).exactly(1).and_call_original
+
+        expect(registered_plugin).to receive(:response_success?).once.and_call_original # second loop succeeds and break
+        expect(registered_plugin).to receive(:log_response).never
+        expect(registered_plugin).to receive(:retryable_exception?).once.and_call_original
+        expect(registered_plugin).to receive(:log_exception).once
 
         registered_plugin.multi_receive([event])
       end

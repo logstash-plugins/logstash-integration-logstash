@@ -32,8 +32,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   DEFAULT_PORT = 9800.freeze
 
-  HTTP_METHOD = "post".freeze
-
   RETRIABLE_CODES = [429, 500, 502, 503, 504]
   RETRYABLE_MANTICORE_EXCEPTIONS = [
     ::Manticore::Timeout,
@@ -46,6 +44,9 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     /Connection reset by peer/i,
     /Read Timed out/i
   ]
+
+  # @api private
+  attr_reader :http_client
 
   def initialize(*a)
     super
@@ -65,7 +66,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def register
     logger.debug("Registering `logstash` output plugin.")
 
-    # TODO: confirm if we have a plan to change @user to @username
     logger.warn("Both `user` and `username` are defined, using `username` value.") if @user && @username
     @user = @username ? @username.freeze : @user
 
@@ -88,14 +88,12 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   def stop
-    logger.debug("Stopping `logstash` output plugin.")
-    # TODO: what should we stop?
     logger.debug("`logstash` output plugin has been stopped.")
   end
 
   def close
     logger.debug("Closing `logstash` output plugin.")
-    @http_client.close
+    http_client.close
     logger.debug("`logstash` output plugin has been closed.")
   end
 
@@ -128,42 +126,35 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   def send_events(events)
-    # we use array to utilize `peek` feature, note that every thread has its own array here
-    pending = Queue.new
-    pending << [:send, events, 0]
+    body = LogStash::Json.dump(events.map(&:to_hash))
+    compressed_body = gzip(body)
 
-    while (popped = pending.pop)
-      action, events, attempt = popped
-      break if action == :done
+    loop do
+      url = ""
+      begin
+        response = @load_balancer.select do |selected_host_uri|
+          url = selected_host_uri
+          http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
+        end
+
+        break if response_success?(response.code)
+
+        retryable_response = retryable_response?(response.code)
+        log_response(url, response, events, retryable_response)
+
+        # allow retrying unless pipeline shutdown requested and retriable response
+        break unless retryable_response || pipeline_shutdown_requested?
+      rescue => exception
+        retryable_exception = retryable_exception?(exception)
+        log_exception(url, exception, body, retryable_exception)
+
+        # allow retrying unless pipeline shutdown requested and retriable exception
+        break unless retryable_exception || pipeline_shutdown_requested?
+      end
 
       if pipeline_shutdown_requested?
-        logger.info "Aborting the batch due to shutdown request."
+        logger.info("Aborting the batch due to shutdown request.")
         abort_batch_if_available!
-      end
-
-      # TODO: what if all hosts are unreachable?
-      # current behaviour is to continuously observe if plugin can send the events
-
-      body = LogStash::Json.dump(events.map {|e| e.to_hash })
-      compressed_body = gzip(body)
-
-      current_host_uri = ""
-      begin
-        response = @load_balancer.select do | selected_host_uri |
-          current_host_uri = selected_host_uri
-          @http_client.send(HTTP_METHOD, selected_host_uri, :body => compressed_body, :headers => @headers).call
-        end
-        action = analyze_response(current_host_uri, response, events)
-      rescue => exception
-        action = analyze_exception(current_host_uri, exception, body)
-      end
-
-      if action == :retry
-        # we retry to send to next available host decided by router
-        attempt += 1
-        pending << [action, events, attempt]
-      else
-        pending << [:done, events, attempt]
       end
     end
   rescue => e
@@ -175,30 +166,22 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     raise e
   end
 
-  def analyze_response(uri, response, events)
+  def log_response(uri, response, events, retriable)
     response_code = response.code
-    return :success if response_success?(response_code)
-
-    if retryable_response?(response_code)
-      if response_code == 429
-        logger.debug? && logger.debug("Encountered a retriable 429 response.")
-      else
-        logger.warn("Encountered a retryable request in `logstash` output", :code => response_code, :body => response.body)
-      end
-      return :retry
+    if retriable
+      logger.debug("Encountered a retriable 429 response.") if response_code == 429
+      logger.warn("Encountered a retryable request in `logstash` output", :code => response_code, :body => response.body) unless response_code == 429
     else
       logger.error("Encountered error",
                    :response_code => response_code,
                    :host => uri,
                    :events => events
       )
-      return :failure
     end
   end
 
-  def analyze_exception(uri, exception, body)
-    will_retry = retryable_exception?(exception)
-    log_entry = { :host => uri, :message => exception.message, :class => exception.class, :will_retry => will_retry }
+  def log_exception(uri, exception, body, retriable)
+    log_entry = { :host => uri, :message => exception.message, :class => exception.class, :retry => retriable }
     if logger.debug?
       # backtraces are big
       log_entry[:backtrace] = exception.backtrace
@@ -206,8 +189,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       log_entry[:body] = body
     end
     logger.error("Could not send data to host", log_entry)
-
-    will_retry ? :retry : :failure
   end
 
   def gzip(data)

@@ -48,6 +48,11 @@ describe 'Logstash Output -> Input complete transmission' do
           loop do
             batch = transmit_queue.pop(true) rescue break
             begin
+              # TODO: potential future improvements
+              #   with LS 7.x versions, timeout doesn't raise an exception due to `Manticore::Client#post(...)#call`
+              #     we can remove `.call` but Router#select -> rescue will be be executed, we loose marking the host down
+              #   timeout block raises `Timeout::Error: execution expired` exception which will be saved in the queue
+              #   we need to catch an original plugin exception
               Timeout.timeout(1) do
                 output_plugin.multi_receive(batch)
               end
@@ -70,7 +75,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: input_events
   # depends: output_events
   shared_examples "large sequence" do
-    let(:event_count) { 10_0 }
+    let(:event_count) { 100 }
 
     let(:input_events) { (0...event_count).map { |idx| LogStash::Event.new("event" => {"sequence" => idx}) } }
 

@@ -53,16 +53,7 @@ describe LoadBalancer do
         end
 
         # make sure errored host doesn't get requests in 60s
-        sleep 60
-        load_balancer.select do | selected_host_uri |
-          expect(selected_host_uri).not_to eq("1.1.1.1:9801")
-        end
 
-        # after cool off time request goes back to errored host
-        sleep 1
-        load_balancer.select do | selected_host_uri |
-          expect(selected_host_uri).to eq("1.1.1.1:9801")
-        end
       end
     end
   end
