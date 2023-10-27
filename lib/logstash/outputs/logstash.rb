@@ -3,6 +3,7 @@
 require "logstash/outputs/base"
 require "logstash/namespace"
 
+require 'logstash/plugin_mixins/normalize_config_support'
 require "logstash/plugin_mixins/http_client"
 require "logstash/plugin_mixins/validator_support/required_host_optional_port_validation_adapter"
 require "zlib"
@@ -11,6 +12,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   extend LogStash::PluginMixins::ValidatorSupport::RequiredHostOptionalPortValidationAdapter
 
   include LogStash::PluginMixins::HttpClient[:with_deprecated => false]
+  include LogStash::PluginMixins::NormalizeConfigSupport
 
   require "logstash/utils/load_balancer"
 
@@ -29,6 +31,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   config :username, :validate => :string, :required => false
 
   config :ssl_enabled, :validate => :boolean, :default => true
+
+  config :user, :validate => :string, :deprecated => "Use `username` instead.", :required => false
 
   DEFAULT_PORT = 9800.freeze
 
@@ -66,8 +70,9 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def register
     logger.debug("Registering `logstash` output plugin.")
 
-    logger.warn("Both `user` and `username` are defined, using `username` value.") if @user && @username
-    @user = @username ? @username.freeze : @user
+    @username = normalize_config(:username) do |normalize|
+      normalize.with_deprecated_alias(:user)
+    end
 
     if @ssl_enabled == false
       rejected_ssl_settings = @original_params.keys.select { |k| k.start_with?('ssl_') } - %w(ssl_enabled)
