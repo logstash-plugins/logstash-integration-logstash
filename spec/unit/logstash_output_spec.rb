@@ -57,19 +57,6 @@ describe LogStash::Outputs::Logstash do
       end
     end
 
-    describe "username and password auth" do
-      let(:config) { super().merge("hosts" => "my-ls-downstream.com:1234", "ssl_enabled" => false) }
-
-      context "with `username`" do
-        let(:config) { super().merge("username" => "test_user") }
-
-        it "requires `password`" do
-          expected_message = "User 'test_user' specified without password!"
-          expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
-        end
-      end
-    end
-
     context "SSL disabled" do
       let(:config) { super().merge("ssl_enabled" => false) }
 

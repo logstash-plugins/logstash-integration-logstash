@@ -6,6 +6,7 @@ require "logstash/inputs/logstash"
 require "logstash/outputs/logstash"
 require "rspec/collection_matchers"
 require "random-port"
+require "timeout"
 
 describe 'Logstash Output -> Input complete transmission' do
 
@@ -48,14 +49,14 @@ describe 'Logstash Output -> Input complete transmission' do
           loop do
             batch = transmit_queue.pop(true) rescue break
             begin
-              # TODO: potential future improvements
-              #   with LS 7.x versions, timeout doesn't raise an exception due to `Manticore::Client#post(...)#call`
-              #     we can remove `.call` but Router#select -> rescue will be be executed, we loose marking the host down
-              #   timeout block raises `Timeout::Error: execution expired` exception which will be saved in the queue
+              # TODO:
+              #   timeout thread _simulates_ `Timeout::Error: execution expired` exception which will be saved in the queue
               #   we need to catch an original plugin exception
-              Timeout.timeout(1) do
+              timeout_thread = Thread.new do
                 output_plugin.multi_receive(batch)
               end
+              timeout_thread.join(2)
+              raise Timeout::Error.new("Execution expired") if timeout_thread.alive?
             rescue => e
               error_queue << e
             end
