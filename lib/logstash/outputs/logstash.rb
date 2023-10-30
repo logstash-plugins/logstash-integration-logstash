@@ -44,10 +44,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     ::Manticore::ResolutionFailure,
     ::Manticore::SocketTimeout
   ]
-  RETRYABLE_EXCEPTION_MESSAGES = [
+  RETRYABLE_EXCEPTION_PATTERN = Regexp.union([
     /Connection reset by peer/i,
-    /Read Timed out/i
-  ]
+    /Read Timed out/i,
+  ])
 
   # @api private
   attr_reader :http_client
@@ -59,10 +59,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
     end
 
-    @headers = {}.tap do | header |
-      header["Content-Type"] = "application/x-ndjson"
-      header["Content-Encoding"] = "gzip"
-    end
+    @headers = {
+      "Content-Type" => "application/x-ndjson".freeze,
+      "Content-Encoding" => "gzip".freeze
+    }.freeze
 
     logger.debug("`logstash` output plugin has been initialized.")
   end
@@ -119,13 +119,11 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   def construct_host_uri
     scheme = @ssl_enabled ? 'https'.freeze : 'http'.freeze
-    [].tap do |downstream_uris|
-      @hosts.each do | host_port_pair | # Struct(:host, :port)
-        uri = LogStash::Util::SafeURI.new(host_port_pair[:host])
-        uri.port = host_port_pair[:port].nil? ? DEFAULT_PORT : host_port_pair[:port]
-        uri.update(:scheme, scheme)
-        # we only need `SafeURI::String` to directly apply to Manticore client
-        downstream_uris << uri.to_s.freeze
+    @hosts.map do |destination| # Struct(:host,:port)
+      URI::Generic.build(:scheme => scheme,
+                         :host   => destination.host,
+                         :port   => destination.port || DEFAULT_PORT)
+    end.map(&:to_s).map(&:freeze)
       end
     end
   end
@@ -174,8 +172,11 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def log_response(uri, response, events, retriable)
     response_code = response.code
     if retriable
-      logger.debug("Encountered a retriable 429 response.") if response_code == 429
-      logger.warn("Encountered a retryable request in `logstash` output", :code => response_code, :body => response.body) unless response_code == 429
+      if response_code == 429
+        logger.debug("Encountered a retriable 429 response")
+      else
+        logger.warn("Encountered a retryable error in `logstash` output", :code => response_code, :body => response.body)
+      end
     else
       logger.error("Encountered error",
                    :response_code => response_code,
@@ -219,7 +220,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   def retryable_unknown_exception?(exception)
     exception.is_a?(::Manticore::UnknownException) &&
-      RETRYABLE_EXCEPTION_MESSAGES.any? { |snippet| exception.message =~ snippet }
+      RETRYABLE_EXCEPTION_PATTERN.match?(exception.message)
   end
 
   def retryable_response?(response_code)
