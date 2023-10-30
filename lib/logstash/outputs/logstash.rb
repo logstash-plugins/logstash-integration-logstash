@@ -74,16 +74,60 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       normalize.with_deprecated_alias(:user)
     end
 
+    validate_auth_settings!
+
     if @ssl_enabled == false
       rejected_ssl_settings = @original_params.keys.select { |k| k.start_with?('ssl_') } - %w(ssl_enabled)
       fail(LogStash::ConfigurationError, "Explicit SSL-related settings not supported because `ssl_enabled => false`: #{rejected_ssl_settings}") if rejected_ssl_settings.any?
     end
+
+    validate_ssl_identity_options!
+    validate_ssl_trust_options!
 
     # if we don't initialize now, we get runtime error when sending events if there are issues with configs
     @http_client = client
     @load_balancer = LoadBalancer.new(construct_host_uri)
 
     logger.debug("`logstash` output plugin has been registered.")
+  end
+
+  def validate_auth_settings!
+    if @username
+      fail(LogStash::ConfigurationError, '`password` is REQUIRED when `username` is provided.') if @password.nil?
+      logger.warn("Transmitting credentials over non-secured connection.") if @ssl_enabled == false
+    elsif @password
+      fail(LogStash::ConfigurationError, '`password` not allowed unless `username` is configured.')
+    end
+  end
+
+  def validate_ssl_identity_options!
+    if @ssl_certificate && @ssl_keystore_path
+      fail(LogStash::ConfigurationError, "SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both.")
+    elsif @ssl_certificate
+      fail(LogStash::ConfigurationError, "`ssl_key` is REQUIRED when `ssl_certificate` is provided.") if @ssl_key.nil?
+    elsif @ssl_key
+      fail(LogStash::ConfigurationError, "`ssl_key` is not allowed unless `ssl_certificate` is configured.")
+    elsif @ssl_keystore_path
+      fail(LogStash::ConfigurationError, "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided.") if @ssl_keystore_password.nil?
+    elsif @ssl_keystore_password
+      fail(LogStash::ConfigurationError, "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured.")
+    else
+      # acceptable
+    end
+  end
+
+  def validate_ssl_trust_options!
+    if @ssl_certificate_authorities&.any? && @ssl_truststore_path
+      fail(LogStash::ConfigurationError, "SSL trust can be configured with EITHER `ssl_certificate_authorities` OR `ssl_truststore_*`, but not both.")
+    elsif @ssl_certificate_authorities&.any?
+      fail(LogStash::ConfigurationError, "SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`.") if @ssl_verification_mode == 'none'
+    elsif @ssl_truststore_path
+      fail(LogStash::ConfigurationError, "SSL Truststore cannot be configured when `ssl_verification_mode => none`.") if @ssl_verification_mode == 'none'
+      fail(LogStash::ConfigurationError, "`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided.") if @ssl_truststore_password.nil?
+
+    elsif @ssl_truststore_password
+      fail(LogStash::ConfigurationError, "`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured.")
+    end
   end
 
   def multi_receive(events)
@@ -124,8 +168,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
                          :host   => destination.host,
                          :port   => destination.port || DEFAULT_PORT)
     end.map(&:to_s).map(&:freeze)
-      end
-    end
   end
 
   def send_events(events)

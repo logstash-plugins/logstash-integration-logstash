@@ -27,7 +27,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: output_events (an array of Events)
   shared_context 'transmission' do
     let(:concurrency) { defined?(super) ? super() : 8 }
-    let(:batch_size) { defined?(super) ? super() : 125 }
+    let(:batch_size) { defined?(super) ? super() : 17 }
 
     let(:output_events) { [] }
     let(:errors) { [] }
@@ -55,8 +55,10 @@ describe 'Logstash Output -> Input complete transmission' do
               timeout_thread = Thread.new do
                 output_plugin.multi_receive(batch)
               end
-              timeout_thread.join(2)
-              raise Timeout::Error.new("Execution expired") if timeout_thread.alive?
+              unless timeout_thread.join(2)
+                timeout_thread.kill
+                raise Timeout::Error.new("Execution expired")
+              end
             rescue => e
               error_queue << e
             end
@@ -76,7 +78,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: input_events
   # depends: output_events
   shared_examples "large sequence" do
-    let(:event_count) { 100 }
+    let(:event_count) { 200 }
 
     let(:input_events) { (0...event_count).map { |idx| LogStash::Event.new("event" => {"sequence" => idx}) } }
 
