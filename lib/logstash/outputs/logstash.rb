@@ -55,6 +55,9 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def initialize(*a)
     super
 
+    define_pipeline_shutdown_request
+    define_abort_batch
+
     if original_params.include?('codec')
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
     end
@@ -146,19 +149,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     logger.debug("`logstash` output plugin has been closed.")
   end
 
-  def pipeline_shutdown_requested?
-    return super if defined?(super) # since LS 8.1.0
-    execution_context&.pipeline&.shutdown_requested?
-  end
-
-  def abort_batch_if_available!
-    raise org.logstash.execution.AbortedBatchException.new if abort_batch_present?
-  end
-
-  def abort_batch_present?
-    ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.8.0')
-  end
-
   private
 
   def construct_host_uri
@@ -177,7 +167,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     loop do
       url = ""
       begin
-        response = @load_balancer.select do |selected_host_uri|
+        response = @load_balancer.select do | selected_host_uri |
           url = selected_host_uri
           http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
         end
@@ -187,19 +177,17 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         retryable_response = retryable_response?(response.code)
         log_response(url, response, events, retryable_response)
 
-        # allow retrying unless pipeline shutdown requested and retriable response
-        break unless retryable_response || pipeline_shutdown_requested?
+        break unless retryable_response
       rescue => exception
         retryable_exception = retryable_exception?(exception)
         log_exception(url, exception, body, retryable_exception)
 
-        # allow retrying unless pipeline shutdown requested and retriable exception
-        break unless retryable_exception || pipeline_shutdown_requested?
+        break unless retryable_exception
       end
 
       if pipeline_shutdown_requested?
-        logger.info("Aborting the batch due to shutdown request.")
         abort_batch_if_available!
+        break
       end
     end
   rescue => e
@@ -269,4 +257,26 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     RETRIABLE_CODES.include?(response_code)
   end
 
+  # Emulate `pipeline_shutdown_requested?` when running on older Logstash
+  def define_pipeline_shutdown_request
+    unless ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.1.0')
+      def pipeline_shutdown_requested?
+        execution_context&.pipeline&.shutdown_requested?
+      end
+    end
+  end
+
+  # When running on Logstash that can abort batches,
+  # raise the required exception, do nothing otherwise.
+  def define_abort_batch
+    if ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.8.0')
+      def abort_batch_if_available!
+        raise org.logstash.execution.AbortedBatchException.new
+      end
+    else
+      def abort_batch_if_available!
+        nil
+      end
+    end
+  end
 end
