@@ -87,7 +87,10 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
     # if we don't initialize now, we get runtime error when sending events if there are issues with configs
     @http_client = client
-    @load_balancer = LoadBalancer.new(construct_host_uri)
+    construct_host_uris = construct_host_uri
+    fail(LogStash::ConfigurationError, "Resolved host URIs from the `hosts` are empty and not allowed.") if !construct_host_uris.any? || construct_host_uris.size == 0
+
+    @load_balancer = LoadBalancer.new(construct_host_uris)
 
     logger.debug("`logstash` output plugin has been registered.")
   end
@@ -163,30 +166,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     compressed_body = gzip(body)
 
     loop do
-      url = ""
-      begin
-        response = @load_balancer.select do | selected_host_uri |
-          url = selected_host_uri
-          http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
-        end
-
-        break if response_success?(response.code)
-
-        retryable_response = retryable_response?(response.code)
-        log_response(url, response, events, retryable_response)
-
-        break unless retryable_response
-      rescue => exception
-        retryable_exception = retryable_exception?(exception)
-        log_exception(url, exception, body, retryable_exception)
-
-        break unless retryable_exception
-      end
-
-      if pipeline_shutdown_requested?
-        abort_batch_if_available!
-        break
-      end
+      next_action = transmit(body, compressed_body)
+      break unless next_action == :retry
     end
   rescue => e
     # This should never happen unless there's a flat out bug in the code
@@ -197,7 +178,31 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     raise e
   end
 
-  def log_response(uri, response, events, retriable)
+  ##
+  # @param body [String]
+  # @param compressed_body [String]
+  # @return [:done, :abort, :retry]
+  def transmit(body, compressed_body)
+    url = nil
+    response = @load_balancer.select do | selected_host_uri |
+      url = selected_host_uri
+      http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
+    end
+
+    return :done if response_success?(response.code)
+
+    retryable_response = retryable_response?(response.code)
+    log_response(url, response, body, retryable_response)
+
+    return retryable_response ? :retry : :abort
+  rescue => exception
+    retryable_exception = retryable_exception?(exception)
+    log_exception(url, exception, body, retryable_exception)
+
+    return retryable_exception ? :retry : :abort
+  end
+
+  def log_response(uri, response, body, retriable)
     response_code = response.code
     if retriable
       if response_code == 429
@@ -209,7 +214,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
       logger.error("Encountered error",
                    :response_code => response_code,
                    :host => uri,
-                   :events => events
+                   :body => body
       )
     end
   end

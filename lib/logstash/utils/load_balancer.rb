@@ -72,7 +72,7 @@ class LoadBalancer
     end
 
     def mark_error
-      @last_error = Time.now.to_f
+      @last_error = Time.now.to_i
     end
   end
 end

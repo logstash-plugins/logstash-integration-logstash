@@ -46,7 +46,9 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_enabled" => false) }
 
         it "causes HTTP scheme" do
-          expect(registered_plugin.send(:construct_host_uri).first).to eql("http://127.0.0.1:9800")
+          constructed_hosts = registered_plugin.send(:construct_host_uri)
+          expect(constructed_hosts).to have_attributes(:size => 1)
+          expect(constructed_hosts.first).to eql("http://127.0.0.1:9800")
         end
       end
 
@@ -201,13 +203,11 @@ describe LogStash::Outputs::Logstash do
   end
 
   describe "batch send" do
-    let(:client) { double("Manticore client") }
-    let(:response) { double("Response object") }
+    let(:normalized_host_uri) { "https://127.0.0.1:9800" }
 
     it "successfully sends events" do
-      allow(registered_plugin.http_client).to receive(:post).and_return(client)
-      allow(client).to receive(:call).and_return(response)
-      allow(response).to receive(:code).and_return(200)
+      registered_plugin.http_client.stub(normalized_host_uri, body: "Response body", code: 200)
+
       expect(registered_plugin).to receive(:response_success?).once.and_call_original
       expect(registered_plugin).to receive(:log_response).never
       expect(registered_plugin).to receive(:retryable_exception?).never
@@ -216,76 +216,32 @@ describe LogStash::Outputs::Logstash do
       registered_plugin.multi_receive([event])
     end
 
-    describe "with a response codes" do
-
-      before do
-        allow(registered_plugin.http_client).to receive(:post).and_return(client)
-        allow(client).to receive(:call).and_return(response)
-      end
+    describe "with host failures" do
 
       it "retries on retriable server errors" do
-        # initial return code is either 429 or 500 and then 200 to stop the while retry loop
-        allow(response).to receive(:code).and_return([429, 500].sample, [429, 500].sample, 200) # code will be called three times
-        allow(response).to receive(:body).and_return("Retriable error.", "Send succeeded.")
+        registered_plugin.http_client.stub(normalized_host_uri, body: "Response body", code: [429, 500].sample)
+        retry_result = registered_plugin.send(:transmit, "Body", "Compressed body")
+        expect(retry_result).to eql(:retry)
 
-        expect(registered_plugin).to receive(:response_success?).exactly(2).and_call_original
-        expect(registered_plugin).to receive(:log_response).once
-        expect(registered_plugin).to receive(:retryable_exception?).never
-        expect(registered_plugin).to receive(:log_exception).never
+        allow(registered_plugin.http_client).to receive(:post).and_raise(
+          [Manticore::Timeout.new,
+           Manticore::SocketException.new,
+           Manticore::ClientProtocolException.new,
+           Manticore::ResolutionFailure.new,
+           Manticore::SocketTimeout.new].sample, "Manticore client error.")
+        retry_result = registered_plugin.send(:transmit, "Body", "Compressed body")
+        expect(retry_result).to eql(:retry)
 
-        registered_plugin.multi_receive([event])
+        allow(registered_plugin.http_client).to receive(:post).and_raise(Manticore::UnknownException.new "Connection reset by peer")
+        retry_result = registered_plugin.send(:transmit, "Body", "Compressed body")
+        expect(retry_result).to eql(:retry)
       end
 
       it "doesn't retry on other non-retriable errors" do
-        allow(response).to receive(:code).and_return([400, 404].sample)
-        allow(response).to receive(:body).and_return("Non-retriable error.", "Send succeeded.")
+        registered_plugin.http_client.stub(normalized_host_uri, body: "Response body", code: [400, 404].sample)
 
-        expect(registered_plugin).to receive(:response_success?).once.and_call_original
-        expect(registered_plugin).to receive(:log_response).once
-        expect(registered_plugin).to receive(:retryable_exception?).never
-        expect(registered_plugin).to receive(:log_exception).never
-
-        registered_plugin.multi_receive([event])
-
-      end
-    end
-
-    describe "with an exception message" do
-      let(:config) { super().merge("hosts" => %w[127.0.0.1 my-ls-downstream.com:1234]) }
-      let(:exception_raising_client) { double("Exceptional Manticore client") }
-
-      before do
-        # a simulation, where 127.0.0.1 host raises an exception and retry to my-ls-downstream.com will be succeeded
-        allow(registered_plugin.http_client).to receive(:post) do | url, _, _|
-          url.eql?("https://127.0.0.1:9800") ? exception_raising_client : client
-        end
-      end
-
-      it "with Manticore socket timeout" do
-        allow(exception_raising_client).to receive(:call).and_raise(Manticore::SocketTimeout.new)
-        allow(client).to receive(:call).and_return(response)
-        allow(response).to receive(:code).and_return(200)
-
-        # retry succeeds and breaks loop
-        expect(registered_plugin).to receive(:retryable_exception?).once.and_call_original
-        expect(registered_plugin).to receive(:log_exception).once
-        expect(registered_plugin).to receive(:response_success?).once.and_call_original
-        expect(registered_plugin).to receive(:log_response).never
-
-        registered_plugin.multi_receive([event])
-      end
-
-      it "with connection reset by peer error" do
-        allow(exception_raising_client).to receive(:call).and_raise(Manticore::UnknownException.new "Connection reset by peer")
-        allow(client).to receive(:call).and_return(response)
-        allow(response).to receive(:code).and_return(200)
-
-        expect(registered_plugin).to receive(:response_success?).once.and_call_original # second loop succeeds and break
-        expect(registered_plugin).to receive(:log_response).never
-        expect(registered_plugin).to receive(:retryable_exception?).once.and_call_original
-        expect(registered_plugin).to receive(:log_exception).once
-
-        registered_plugin.multi_receive([event])
+        retry_result = registered_plugin.send(:transmit, "Body", "Compressed body")
+        expect(retry_result).not_to eql(:retry)
       end
     end
   end
