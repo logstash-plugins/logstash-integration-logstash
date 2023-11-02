@@ -55,8 +55,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def initialize(*a)
     super
 
-    define_pipeline_shutdown_request
-    define_abort_batch
 
     if original_params.include?('codec')
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
@@ -258,25 +256,21 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   # Emulate `pipeline_shutdown_requested?` when running on older Logstash
-  def define_pipeline_shutdown_request
-    unless ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.1.0')
-      def pipeline_shutdown_requested?
-        execution_context&.pipeline&.shutdown_requested?
-      end
+  unless ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.1.0')
+    def pipeline_shutdown_requested?
+      execution_context&.pipeline&.shutdown_requested?
     end
   end
 
   # When running on Logstash that can abort batches,
   # raise the required exception, do nothing otherwise.
-  def define_abort_batch
-    if ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.8.0')
-      def abort_batch_if_available!
-        raise org.logstash.execution.AbortedBatchException.new
-      end
-    else
-      def abort_batch_if_available!
-        nil
-      end
+  if ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.8.0')
+    def abort_batch_if_available!
+      raise org.logstash.execution.AbortedBatchException.new
+    end
+  else
+    def abort_batch_if_available!
+      nil
     end
   end
 end

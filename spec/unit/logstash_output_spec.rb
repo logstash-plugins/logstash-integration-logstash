@@ -54,7 +54,10 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("hosts" => "127.0.0.1:9808") }
 
         it "will be applied" do
-          expect(registered_plugin.send(:construct_host_uri).first).to eql("https://127.0.0.1:9808")
+          
+        constructed_hosts = registered_plugin.send(:construct_host_uri)
+        expect(constructed_hosts).to have_attributes(:size => 1)
+        expect(constructed_hosts.first).to eql("https://127.0.0.1:9808")
         end
       end
     end
