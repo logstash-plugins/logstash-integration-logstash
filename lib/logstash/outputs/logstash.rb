@@ -87,10 +87,9 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
     # if we don't initialize now, we get runtime error when sending events if there are issues with configs
     @http_client = client
-    construct_host_uris = construct_host_uri
-    fail(LogStash::ConfigurationError, "Resolved host URIs from the `hosts` are empty and not allowed.") if !construct_host_uris.any? || construct_host_uris.size == 0
+    fail(LogStash::ConfigurationError, "`hosts` must not be empty") if @hosts.empty?
 
-    @load_balancer = LoadBalancer.new(construct_host_uris)
+    @load_balancer = LoadBalancer.new(construct_host_uri)
 
     logger.debug("`logstash` output plugin has been registered.")
   end
@@ -152,13 +151,15 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
 
   private
 
-  def construct_host_uri
-    scheme = @ssl_enabled ? 'https'.freeze : 'http'.freeze
-    @hosts.map do |destination| # Struct(:host,:port)
-      URI::Generic.build(:scheme => scheme,
-                         :host   => destination.host,
-                         :port   => destination.port || DEFAULT_PORT)
-    end.map(&:to_s).map(&:freeze)
+  def normalize_host_uris
+    @_normalized_host_uris ||= begin
+      scheme = @ssl_enabled ? 'https' : 'http'
+      @hosts.map do |destination| # Struct(:host,:port)
+        URI::Generic.build(:scheme => scheme,
+                           :host   => destination.host,
+                           :port   => destination.port || DEFAULT_PORT)
+      end.map(&:to_s).map(&:freeze)
+    end
   end
 
   def send_events(events)
@@ -168,6 +169,13 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     loop do
       next_action = transmit(body, compressed_body)
       break unless next_action == :retry
+      
+      if pipeline_shutdown_requested?
+        logger.warn "Aborting the batch due to shutdown request."
+        abort_batch_if_available!
+        break # legacy abort (lossy)
+      end
+        
     end
   rescue => e
     # This should never happen unless there's a flat out bug in the code
