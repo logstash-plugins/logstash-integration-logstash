@@ -335,7 +335,7 @@ describe LogStash::Outputs::Logstash do
         end
         let(:limit_met_next_action) { :retry }
 
-        if Object.const_defined?('AbortedBatchException')
+        if ::Gem::Version.create(LOGSTASH_VERSION) >= ::Gem::Version.create('8.8.0')
           it 'aborts the batch' do
             expect { registered_plugin.multi_receive(events) }.to raise_exception(org.logstash.execution.AbortedBatchException)
 

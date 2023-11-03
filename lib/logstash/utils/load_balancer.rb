@@ -9,6 +9,13 @@
 
 require "monitor"
 
+##
+# The following is a high-level validation of CURRENT implementation
+# that is tightly-coupled with initial state and is NOT a specification
+# of the behaviour once its initial state has been invalidated by use.
+#
+# A formal validation of the load balancer's behaviour is forthcoming.
+#
 class LoadBalancer
   include MonitorMixin
 
