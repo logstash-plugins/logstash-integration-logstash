@@ -1,5 +1,12 @@
 # encoding: utf-8
 
+########################################################################
+# Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V.
+# under one or more contributor license agreements. Licensed under the
+# Elastic License 2.0; you may not use this file except in compliance
+# with the Elastic License 2.0.
+########################################################################
+
 require "logstash/outputs/base"
 require "logstash/namespace"
 
@@ -55,7 +62,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   def initialize(*a)
     super
 
-
     if original_params.include?('codec')
       fail LogStash::ConfigurationError, 'The `logstash` output does not have an externally-configurable `codec`'
     end
@@ -89,7 +95,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     @http_client = client
     fail(LogStash::ConfigurationError, "`hosts` must not be empty") if @hosts.empty?
 
-    @load_balancer = LoadBalancer.new(construct_host_uri)
+    @load_balancer = LoadBalancer.new(normalize_host_uris)
 
     logger.debug("`logstash` output plugin has been registered.")
   end
@@ -127,7 +133,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     elsif @ssl_truststore_path
       fail(LogStash::ConfigurationError, "SSL Truststore cannot be configured when `ssl_verification_mode => none`.") if @ssl_verification_mode == 'none'
       fail(LogStash::ConfigurationError, "`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided.") if @ssl_truststore_password.nil?
-
     elsif @ssl_truststore_password
       fail(LogStash::ConfigurationError, "`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured.")
     end
@@ -175,7 +180,6 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
         abort_batch_if_available!
         break # legacy abort (lossy)
       end
-        
     end
   rescue => e
     # This should never happen unless there's a flat out bug in the code
