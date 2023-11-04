@@ -171,10 +171,16 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     body = LogStash::Json.dump(events.map(&:to_hash))
     compressed_body = gzip(body)
 
+    next_backoff = 0.1
+    max_backoff = 30
+
     loop do
       next_action = transmit(body, compressed_body)
       break unless next_action == :retry
-      
+
+      Stud.stoppable_sleep(next_backoff) { pipeline_shutdown_requested? }
+      next_backoff = [next_backoff*2, max_backoff].min
+
       if pipeline_shutdown_requested?
         logger.warn "Aborting the batch due to shutdown request."
         abort_batch_if_available!
@@ -190,28 +196,44 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     raise e
   end
 
+  # The exceptions we decide (retriable or abort) to let the Load Balancer know
+  TransmitException = Class.new(RuntimeError)
+  private_constant :TransmitException
+
+  RetriableTransmitException = Class.new(TransmitException)
+  private_constant :RetriableTransmitException
+
+  TerminalTransmitException = Class.new(TransmitException)
+  private_constant :TerminalTransmitException
+
   ##
   # @param body [String]
   # @param compressed_body [String]
   # @return [:done, :abort, :retry]
   def transmit(body, compressed_body)
-    url = nil
-    response = @load_balancer.select do | selected_host_uri |
-      url = selected_host_uri
-      http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
+    @load_balancer.select do |selected_host_uri|
+      response = begin
+                   http_client.post(selected_host_uri, :body => compressed_body, :headers => @headers).call
+                 rescue => exception
+                   retryable_exception = retryable_exception?(exception)
+                   log_exception(selected_host_uri, exception, body, retryable_exception)
+
+                   # raise exception to mar the host error
+                   raise retryable_exception ? RetriableTransmitException : TerminalTransmitException
+                 end
+
+      return :done if response_success?(response.code)
+
+      retryable_response = retryable_response?(response.code)
+      log_response(selected_host_uri, response, body, retryable_response)
+
+      # raise exception to mar the host error
+      raise retryable_response ? RetriableTransmitException : TerminalTransmitException
     end
-
-    return :done if response_success?(response.code)
-
-    retryable_response = retryable_response?(response.code)
-    log_response(url, response, body, retryable_response)
-
-    return retryable_response ? :retry : :abort
-  rescue => exception
-    retryable_exception = retryable_exception?(exception)
-    log_exception(url, exception, body, retryable_exception)
-
-    return retryable_exception ? :retry : :abort
+  rescue RetriableTransmitException => exception
+    return :retry
+  rescue TerminalTransmitException => exception
+    return :abort
   end
 
   def log_response(uri, response, body, retriable)

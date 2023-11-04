@@ -30,6 +30,7 @@ Gem::Specification.new do |s|
 
   s.add_runtime_dependency "logstash-mixin-http_client", "~> 7.3"
   s.add_runtime_dependency "logstash-input-http", ">= 3.7.0"  # some params not available in older versions because they are renamed, such as `cacert` to `ssl_certificate_authorities`
+  s.add_runtime_dependency "stud"
 
   s.add_development_dependency "logstash-devutils"
   s.add_development_dependency "rspec-collection_matchers"

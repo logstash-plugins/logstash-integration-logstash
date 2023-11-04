@@ -78,7 +78,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: input_events
   # depends: output_events
   shared_examples "large sequence" do
-    let(:event_count) { 200 }
+    let(:event_count) { 10_000 }
 
     let(:input_events) { (0...event_count).map { |idx| LogStash::Event.new("event" => {"sequence" => idx}) } }
 
@@ -90,7 +90,7 @@ describe 'Logstash Output -> Input complete transmission' do
   end
 
   shared_examples "connection failure" do
-    let(:input_events) { [LogStash::Event.new("event" => {"sequence" => 99})] }
+    let(:input_events) { [LogStash::Event.new("event" => {"sequence" => 999})] }
 
     it 'fails to transmit the events' do
       expect(errors).to have_exactly(1).items
