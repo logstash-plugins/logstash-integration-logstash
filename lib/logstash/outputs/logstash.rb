@@ -74,6 +74,8 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
     @username = normalize_config(:username) do |normalize|
       normalize.with_deprecated_alias(:user)
     end
+    # remove after deprecating user in the http-mixin
+    @user = @username ? @username.freeze : @user
 
     validate_auth_settings!
 
