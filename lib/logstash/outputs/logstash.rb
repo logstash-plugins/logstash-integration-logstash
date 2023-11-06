@@ -9,6 +9,8 @@ require "logstash/plugin_mixins/http_client"
 require "logstash/plugin_mixins/validator_support/required_host_optional_port_validation_adapter"
 require "zlib"
 
+require "stud/interval" # Stud::stoppable_sleep
+
 class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   extend LogStash::PluginMixins::ValidatorSupport::RequiredHostOptionalPortValidationAdapter
 
