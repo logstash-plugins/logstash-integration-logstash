@@ -4,6 +4,13 @@ require_relative "../spec_helper"
 require "logstash/devutils/rspec/shared_examples"
 require "logstash/utils/load_balancer"
 
+#
+# The following is a high-level validation of CURRENT implementation
+# that is tightly-coupled with initial state and is NOT a specification
+# of the behaviour once its initial state has been invalidated by use.
+#
+# A formal validation of the load balancer's behaviour is forthcoming.
+#
 describe LoadBalancer do
   let(:downstream_infos) { %w[1.1.1.1:9801 2.2.2.2:9802 3.3.3.3:9803] }
 
