@@ -6,6 +6,7 @@ require "logstash/inputs/logstash"
 require "logstash/outputs/logstash"
 require "rspec/collection_matchers"
 require "random-port"
+require "timeout"
 
 describe 'Logstash Output -> Input complete transmission' do
 
@@ -26,7 +27,7 @@ describe 'Logstash Output -> Input complete transmission' do
   # provides: output_events (an array of Events)
   shared_context 'transmission' do
     let(:concurrency) { defined?(super) ? super() : 8 }
-    let(:batch_size) { defined?(super) ? super() : 125 }
+    let(:batch_size) { defined?(super) ? super() : 17 }
 
     let(:output_events) { [] }
     let(:errors) { [] }
@@ -48,8 +49,15 @@ describe 'Logstash Output -> Input complete transmission' do
           loop do
             batch = transmit_queue.pop(true) rescue break
             begin
-              Timeout.timeout(5) do
+              # TODO:
+              #   timeout thread _simulates_ `Timeout::Error: execution expired` exception which will be saved in the queue
+              #   we need to catch an original plugin exception
+              timeout_thread = Thread.new do
                 output_plugin.multi_receive(batch)
+              end
+              unless timeout_thread.join(2)
+                timeout_thread.kill
+                raise Timeout::Error.new("Execution expired")
               end
             rescue => e
               error_queue << e

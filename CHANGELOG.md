@@ -1,3 +1,6 @@
+## 1.0.0
+  - Introduces the load balancing mechanism to distribute the requests among the `hosts` [#16](https://github.com/logstash-plugins/logstash-integration-logstash/pull/16)
+
 ## 0.0.5
   - [DOC] Fixes to link formatting [#15](https://github.com/logstash-plugins/logstash-integration-logstash/pull/15)
 
