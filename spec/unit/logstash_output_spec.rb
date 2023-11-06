@@ -70,7 +70,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("username" => "test_user") }
 
         it "requires `password`" do
-          expected_message = "`password` is REQUIRED when `username` is provided."
+          expected_message = "`password` is REQUIRED when `username` is provided"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -79,7 +79,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("password" => "pa$$") }
 
         it "requires `username`" do
-          expected_message = "`password` not allowed unless `username` is configured."
+          expected_message = "`password` not allowed unless `username` is configured"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -105,7 +105,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_certificate" => cert_fixture!('server_from_root.pem')) }
 
         it "requires `ssl_key`" do
-          expected_message = "`ssl_key` is REQUIRED when `ssl_certificate` is provided."
+          expected_message = "`ssl_key` is REQUIRED when `ssl_certificate` is provided"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
 
@@ -113,7 +113,7 @@ describe LogStash::Outputs::Logstash do
           let(:config) { super().merge("ssl_keystore_path" => cert_fixture!("client_from_root.jks"), "ssl_key" => cert_fixture!("server_from_root.key.pem")) }
 
           it "cannot be used together" do
-            expected_message = "SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both."
+            expected_message = "SSL identity can be configured with EITHER `ssl_certificate` OR `ssl_keystore_*`, but not both"
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
           end
         end
@@ -123,7 +123,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_key" => cert_fixture!('server_from_root.key.pkcs8.pem')) }
 
         it "requires SSL certificate" do
-          expected_message = '`ssl_key` is not allowed unless `ssl_certificate` is configured.'
+          expected_message = '`ssl_key` is not allowed unless `ssl_certificate` is configured'
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -132,7 +132,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_keystore_path" => cert_fixture!('server_from_root.jks')) }
 
         it "requires `ssl_keystore_password`" do
-          expected_message = "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided."
+          expected_message = "`ssl_keystore_password` is REQUIRED when `ssl_keystore_path` is provided"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -141,7 +141,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_keystore_password" => "pa$$w0rd") }
 
         it "requires `ssl_keystore_path`" do
-          expected_message = "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured."
+          expected_message = "`ssl_keystore_password` is not allowed unless `ssl_keystore_path` is configured"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
@@ -157,7 +157,7 @@ describe LogStash::Outputs::Logstash do
           let(:config) { super().merge("ssl_verification_mode" => "none") }
 
           it "not allowed" do
-            expected_message = "SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`."
+            expected_message = "SSL Certificate Authorities cannot be configured when `ssl_verification_mode => none`"
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
           end
         end
@@ -166,7 +166,7 @@ describe LogStash::Outputs::Logstash do
           let(:config) { super().merge("ssl_truststore_path" => cert_fixture!("client_self_signed.jks")) }
 
           it "not allowed" do
-            expected_message = "SSL trust can be configured with EITHER `ssl_certificate_authorities` OR `ssl_truststore_*`, but not both."
+            expected_message = "SSL trust can be configured with EITHER `ssl_certificate_authorities` OR `ssl_truststore_*`, but not both"
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
           end
         end
@@ -176,7 +176,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_truststore_path" => cert_fixture!('client_self_signed.jks')) }
 
         it "requires truststore password" do
-          expected_message = "`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided."
+          expected_message = "`ssl_truststore_password` is REQUIRED when `ssl_truststore_path` is provided"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
 
@@ -184,7 +184,7 @@ describe LogStash::Outputs::Logstash do
           let(:config) { super().merge("ssl_verification_mode" => "none") }
 
           it "not allowed" do
-            expected_message = "SSL Truststore cannot be configured when `ssl_verification_mode => none`."
+            expected_message = "SSL Truststore cannot be configured when `ssl_verification_mode => none`"
             expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
           end
         end
@@ -194,7 +194,7 @@ describe LogStash::Outputs::Logstash do
         let(:config) { super().merge("ssl_truststore_password" => "pa$$w0rd") }
 
         it "not allowed" do
-          expected_message = "`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured."
+          expected_message = "`ssl_truststore_password` not allowed unless `ssl_truststore_path` is configured"
           expect{ registered_plugin }.to raise_error(LogStash::ConfigurationError).with_message(expected_message)
         end
       end
