@@ -12,6 +12,9 @@ require "zlib"
 require "stud/interval" # Stud::stoppable_sleep
 
 class LogStash::Outputs::Logstash < LogStash::Outputs::Base
+
+  concurrency :shared
+
   extend LogStash::PluginMixins::ValidatorSupport::RequiredHostOptionalPortValidationAdapter
 
   include LogStash::PluginMixins::HttpClient[:with_deprecated => false]

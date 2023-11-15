@@ -1,3 +1,6 @@
+## 1.0.1
+  - Fix: improves throughput by allowing pipeline workers to share a plugin instance _concurrently_ instead of _sequentially_
+
 ## 1.0.0
   - Introduces the load balancing mechanism to distribute the requests among the `hosts` [#16](https://github.com/logstash-plugins/logstash-integration-logstash/pull/16)
 
