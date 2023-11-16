@@ -21,6 +21,7 @@ describe LogStash::Outputs::Logstash do
     it { is_expected.to be_a_kind_of Class }
     it { is_expected.to be <= LogStash::Outputs::Base }
     it { is_expected.to have_attributes(:config_name => "logstash") }
+    it { is_expected.to have_attributes(:concurrency => :shared) }
   end
 
   describe "a plugin instance with minimal config" do
