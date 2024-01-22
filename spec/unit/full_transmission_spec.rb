@@ -106,6 +106,54 @@ describe 'Logstash Output -> Input complete transmission' do
     include_examples "large sequence"
   end
 
+  context 'event decoration' do
+    let(:output_config) { {"hosts" => "127.0.0.1:#{port}", "ssl_enabled" => false} }
+    let(:input_config) { {"host" => "127.0.0.1", "port" => port, "ssl_enabled" => false} }
+
+    let(:output_plugin) { LogStash::Outputs::Logstash.new(output_config) }
+    let(:input_plugin) { LogStash::Inputs::Logstash.new(input_config) }
+
+    let(:event_count) { 10 }
+    let(:input_events) { (0...event_count).map { |idx| LogStash::Event.new("event" => {"sequence" => idx}) } }
+
+    include_context 'transmission'
+
+    context "when configured with `tags` decorator" do
+      let(:input_config) { super().merge("tags" => %w(one-tag two-tag)) }
+      it 'applies the `tags` decoration' do
+        expect(output_events).to_not be_empty
+        # expect(output_events).to all(satisfy {|e| e.tags && Array(e.tags).include?('one-tag') && Array(e.tags).include?('two-tag') })
+        output_events.each do |output_event|
+          expect(output_event).to include 'tags'
+          expect(output_event.get('tags')).to include('one-tag').and(include('two-tag'))
+        end
+      end
+    end
+    context "when configured with `type` decorator" do
+      let(:input_config) { super().merge("type" => "fancy") }
+      it 'applies the `type` decoration' do
+        expect(output_events).to_not be_empty
+        # expect(output_events).to all(satisfy {|e| e.get('type')&.then{ |t| t && t == 'fancy'} })
+        output_events.each do |output_event|
+          expect(output_event).to include 'type'
+          expect(output_event.get('type')).to eq("fancy")
+        end
+      end
+    end
+    context "when configured with `add_field`" do
+      let(:input_config) { super().merge("add_field" => {"my_field" => "field_value", "another_field" => "another-value"}) }
+      it 'applies the `add_field` decoration' do
+        expect(output_events).to_not be_empty
+        output_events.each do |output_event|
+          expect(output_event).to include 'my_field'
+          expect(output_event.get('my_field')).to eq("field_value")
+          expect(output_event).to include 'another_field'
+          expect(output_event.get('another_field')).to eq("another-value")
+        end
+      end
+    end
+  end
+
   context 'simple ssl with client authentication none' do
     let(:input_plugin) {
       LogStash::Inputs::Logstash.new({

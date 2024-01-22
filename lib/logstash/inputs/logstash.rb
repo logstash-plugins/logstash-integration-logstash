@@ -61,7 +61,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
 
   def run(queue)
     logger.debug("starting inner HTTP input plugin")
-    @internal_http.run(QueueWrapper.new(queue))
+    @internal_http.run(QueueWrapper.new(queue, method(:decorate)))
     logger.debug("inner HTTP input plugin has exited normally")
   rescue => e
     logger.error("inner HTTP plugin has had an unrecoverable exception: #{e.message} at #{e.backtrace.first}")
@@ -173,12 +173,14 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   end
 
   class QueueWrapper
-    def initialize(wrapped_queue)
+    def initialize(wrapped_queue, decorator)
       @wrapped_queue = wrapped_queue
+      @decorator = decorator
     end
 
     def << (event)
       event.remove('[@metadata][void]')
+      @decorator.call(event)
       @wrapped_queue << event
     end
   end
