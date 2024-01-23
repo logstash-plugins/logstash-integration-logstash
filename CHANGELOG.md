@@ -1,3 +1,6 @@
+## 1.0.2
+  - Fix: input plugin now correctly applies common event decorators `type`, `tags`, and `add_field` to events after receiving them
+
 ## 1.0.1
   - Fix: improves throughput by allowing pipeline workers to share a plugin instance _concurrently_ instead of _sequentially_ [#19](https://github.com/logstash-plugins/logstash-integration-logstash/pull/19)
 
