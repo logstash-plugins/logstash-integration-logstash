@@ -1,3 +1,6 @@
+## 1.0.3
+  -[DOC] Fix attributes to accurately set and clear default codec values [#23](https://github.com/logstash-plugins/logstash-integration-logstash/pull/23)
+
 ## 1.0.2
   - Fix: input plugin now correctly applies common event decorators `type`, `tags`, and `add_field` to events after receiving them
 
