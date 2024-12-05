@@ -26,7 +26,7 @@ Gem::Specification.new do |s|
   s.add_runtime_dependency "logstash-core-plugin-api", ">= 2.1.12", "<= 2.99"
   s.add_runtime_dependency "logstash-mixin-plugin_factory_support", "~> 1.0"
   s.add_runtime_dependency "logstash-mixin-validator_support", "~> 1.1"
-  s.add_runtime_dependency "logstash-codec-json_lines", "~> 3.1"
+  s.add_runtime_dependency "logstash-codec-json", "~> 3"
 
   s.add_runtime_dependency "logstash-mixin-http_client", "~> 7.3"
   s.add_runtime_dependency "logstash-input-http", ">= 3.7.0"  # some params not available in older versions because they are renamed, such as `cacert` to `ssl_certificate_authorities`
