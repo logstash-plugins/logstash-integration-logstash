@@ -202,11 +202,46 @@ describe LogStash::Outputs::Logstash do
     end
   end
 
+  describe "#send_events" do
+    let(:events) {
+      [
+        {"message" => "one"},
+        {"message" => "two"},
+        {"message" => "three"}
+      ].map{|eh| LogStash::Event.new(eh)}
+    }
+
+    before(:each) do
+      allow(registered_plugin).to receive(:transmit).and_return(:done)
+    end
+
+    it 'invokes #transmit with newline-delimited JSON body' do
+      registered_plugin.send(:send_events, events)
+
+      expect(registered_plugin).to have_received(:transmit) do |body, gzipped_body|
+        expect(body).to be_a_kind_of(String)
+        expect(gzipped_body).to be_a_kind_of(String)
+                                .and(have_attributes(:encoding => Encoding::BINARY))
+                                .and(start_with("\x1F\x8B".b))
+                                .and(be_gzip_encoded_form_of(body))
+
+        expect(body.split(/(?<=\n)/)).to have(3).items.and(all(start_with("{").and(end_with("}\n"))))
+      end
+    end
+
+    RSpec::Matchers.define :be_gzip_encoded_form_of do |expected|
+      match do |actual|
+        decoded_actual = Zlib::GzipReader.new(StringIO.new(actual)).read
+        decoded_actual == expected
+      end
+    end
+  end
+
   describe "#transmit" do
     let(:normalized_host_uri) { "https://127.0.0.1:9800" }
 
-    let(:encoded_body) { "[]" }
-    let(:compressed_body) { "\x1F\xC3\xA3\b\x00\xE2\x80\xBA\xE2\x80\x9ACe\x00\x03\xC3\xA3\xC3\xA9\xC3\x82\x02\x00D\xE2\x80\x9Chp\x03\x00\x00\x00".b }
+    let(:encoded_body) { %w({"this":1}\n{"that":2}\n) }
+    let(:compressed_body) { "\x1F\x8B\b\x00\xC0\xECQg\x00\xFF\x8BV\xAA\x8EQ*\xC9\xC8,\x8EQ\xB22\xAC\x8D\x89\xC9\x03s\x13K\x80\\#\x10W)\x16\x00\x00g\xDEy\"\x00\x00\x00".b }
 
     subject(:transmit_result) { registered_plugin.send(:transmit, encoded_body, compressed_body) }
 
