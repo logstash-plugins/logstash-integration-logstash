@@ -5,7 +5,7 @@ require 'logstash/namespace'
 
 require "logstash/plugin_mixins/plugin_factory_support"
 
-require 'logstash/codecs/json_lines'
+require 'logstash/codecs/json'
 
 class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   include LogStash::PluginMixins::PluginFactorySupport
@@ -88,7 +88,7 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
         'port' => @port,
 
         # non-configurable codec
-        'codec' => plugin_factory.codec('json_lines').new(inner_json_lines_codec_options),
+        'codec' => plugin_factory.codec('json').new(inner_json_codec_options),
         'additional_codecs' => {},
         'response_headers' => { 'Accept' => 'application/x-ndjson' },
 
@@ -161,8 +161,8 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
     end
   end
 
-  def inner_json_lines_codec_options
-    @_inner_json_lines_codec_options ||= {
+  def inner_json_codec_options
+    @_inner_json_codec_options ||= {
       # enrichment avoidance
       'ecs_compatibility' => 'disabled',
     }
