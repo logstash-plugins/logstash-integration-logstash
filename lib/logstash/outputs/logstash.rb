@@ -169,7 +169,7 @@ class LogStash::Outputs::Logstash < LogStash::Outputs::Base
   end
 
   def send_events(events)
-    body = events.map(&:to_json).map { |json| json << "\n" }.reduce(:<<)
+    body = events.map { |event| event.to_json << "\n" }.reduce(:<<)
     compressed_body = gzip(body)
 
     next_backoff = 0.1
