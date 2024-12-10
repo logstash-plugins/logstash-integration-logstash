@@ -1,3 +1,6 @@
+## 1.0.4
+  - Fix: output plugin now correctly outputs event-oriented ndjson-compatible payloads, bypassing an issue where downstream inputs encountered buffering limits
+
 ## 1.0.3
   -[DOC] Fix attributes to accurately set and clear default codec values [#23](https://github.com/logstash-plugins/logstash-integration-logstash/pull/23)
 
