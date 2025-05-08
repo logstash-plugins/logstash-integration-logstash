@@ -29,12 +29,10 @@ NOTE: Sending events to _any_ destination other than a `logstash-input` plugin i
       We will maintain cross-compatibility with any two supported versions of output/input pair and reserve the right to change details such as protocol and encoding.
 
 [id="plugins-{type}s-{plugin}-minimum-config"]
-===== Minimum Configuration
-[cols="2a,2a"]
-|=======================================================================================================================
-|SSL Enabled              |SSL Disabled
+===== Minimum configuration
 
-|
+[id="plugins-{type}s-{plugin}-config-ssl-enabled"]
+====== SSL enabled              |
 
 [source]
 ----
@@ -45,7 +43,8 @@ output {
 }
 ----
 
-|
+[id="plugins-{type}s-{plugin}-config-ssl-enabled"]
+====== SSL disabled
 
 [source]
 ----
@@ -58,10 +57,8 @@ output {
 }
 ----
 
-|=======================================================================================================================
-
 [id="plugins-{type}s-{plugin}-config-connecting"]
-===== Configuration Concepts
+===== Configuration concepts
 
 Configure this output plugin to connect to a {logstash-ref}/plugins-inputs-logstash.html[Logstash input plugin] by specifying its `hosts`.
 Depending on the downstream plugin's configuration, you may need to also configure the target port, SSL, and/or credentials.
