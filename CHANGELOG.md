@@ -1,3 +1,6 @@
+## 1.0.5
+  - Test change [#28](https://github.com/logstash-plugins/logstash-integration-logstash/pull/28)
+
 ## 1.0.4
   - Fix: output plugin now correctly outputs event-oriented ndjson-compatible payloads, bypassing an issue where downstream inputs encountered buffering limits
 
