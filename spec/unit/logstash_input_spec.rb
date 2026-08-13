@@ -28,7 +28,14 @@ describe LogStash::Inputs::Logstash do
   describe "plugin register" do
     let(:config) {{ }}
 
-    let(:registered_plugin) { plugin.tap(&:register) }
+    # Register without letting the inner HTTP input bind a real socket, so these
+    # config-reflection unit tests don't depend on port/address availability.
+    let(:registered_plugin) do
+      plugin.tap do |p|
+        allow(p.instance_variable_get(:@internal_http)).to receive(:register)
+        p.register
+      end
+    end
     context "configuring port" do
       let(:config) { { "ssl_enabled" => false } } # minimum config
       context "default value" do
