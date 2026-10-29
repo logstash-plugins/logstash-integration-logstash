@@ -1,3 +1,6 @@
+## 1.1.0
+  - Add `decode_size_limit_bytes` input option to configure the maximum event size decoded by the inner `json_lines` codec [#33](https://github.com/logstash-plugins/logstash-integration-logstash/pull/33)
+
 ## 1.0.5
   - Test change [#28](https://github.com/logstash-plugins/logstash-integration-logstash/pull/28)
 
