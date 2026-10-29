@@ -41,6 +41,9 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
   config :ssl_cipher_suites, :validate => :string, :list => true
   config :ssl_supported_protocols, :validate => :string, :list => true
 
+  # inner `json_lines` codec limit; when unset, the codec's default applies
+  config :decode_size_limit_bytes, :validate => :number
+
   def initialize(*a)
     super
 
@@ -165,7 +168,8 @@ class LogStash::Inputs::Logstash < LogStash::Inputs::Base
     @_inner_json_lines_codec_options ||= {
       # enrichment avoidance
       'ecs_compatibility' => 'disabled',
-    }
+      'decode_size_limit_bytes' => @decode_size_limit_bytes,
+    }.compact
   end
 
   def report_invalid_config!(message)

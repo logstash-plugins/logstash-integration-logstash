@@ -51,6 +51,27 @@ describe LogStash::Inputs::Logstash do
       end
     end
 
+    context "configuring decode_size_limit_bytes" do
+      let(:config) { { "ssl_enabled" => false } } # minimum config
+
+      context "default value" do
+        it "is not passed, so the inner codec's default applies" do
+          expect(registered_plugin.inner_json_lines_codec_options.keys).not_to include('decode_size_limit_bytes')
+        end
+      end
+
+      context "explicitly configured" do
+        let(:config) { super().merge("decode_size_limit_bytes" => 512) }
+
+        it "is passed to the inner codec" do
+          expect(registered_plugin.inner_json_lines_codec_options).to include("decode_size_limit_bytes" => 512)
+
+          inner_http = registered_plugin.instance_variable_get(:@internal_http)
+          expect(inner_http.codec).to have_attributes(:decode_size_limit_bytes => 512)
+        end
+      end
+    end
+
     context "configuring host" do
       let(:config) { { "ssl_enabled" => false } } # minimum config
       context "default value" do
